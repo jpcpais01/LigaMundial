@@ -136,6 +136,24 @@ export async function updateUserDoc(username: string, data: Partial<import('@/ty
   await setDoc(doc(db, 'users', username), data as Record<string, unknown>, { merge: true });
 }
 
+// ─── CONFIGURAÇÃO DAS LIGAS (background) ─────────────────────────────────────
+export async function getLeagueConfig(leagueId: string): Promise<{ backgroundUrl?: string } | null> {
+  const snap = await getDoc(doc(db, 'leagueConfig', leagueId));
+  if (!snap.exists()) return null;
+  return snap.data() as { backgroundUrl?: string };
+}
+
+export async function setLeagueBackground(leagueId: string, backgroundUrl: string): Promise<void> {
+  await setDoc(doc(db, 'leagueConfig', leagueId), { backgroundUrl }, { merge: true });
+}
+
+export async function getAllLeagueConfigs(): Promise<Record<string, { backgroundUrl?: string }>> {
+  const snaps = await getDocs(collection(db, 'leagueConfig'));
+  const res: Record<string, { backgroundUrl?: string }> = {};
+  snaps.docs.forEach(d => { res[d.id] = d.data() as { backgroundUrl?: string }; });
+  return res;
+}
+
 export async function getUsersByUsernames(usernames: string[]): Promise<import('@/types').User[]> {
   if (usernames.length === 0) return [];
   const snaps = await Promise.all(usernames.map(u => getDoc(doc(db, 'users', u))));
