@@ -10,7 +10,7 @@ export default function HomePage() {
   const { user, loading, setShowAuthModal } = useAuthContext();
 
   return (
-    <div className="min-h-dvh">
+    <div>
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-7 pb-5">
         <div>

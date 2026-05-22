@@ -40,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="page-bg football-pattern">
         <AuthProvider>
-          <main className="max-w-md mx-auto min-h-dvh pb-28">
+          <main className="max-w-md mx-auto pb-24">
             {children}
           </main>
           <BottomNav />
