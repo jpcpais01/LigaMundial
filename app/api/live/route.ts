@@ -1,22 +1,33 @@
 import { NextResponse } from 'next/server';
+import { ALL_MATCHES } from '@/data/matches';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export type LiveScore = {
   homeScore: number;
   awayScore: number;
   status: 'live' | 'finished';
-  elapsed?: number; // minutes played
+  elapsed?: number;
 };
-
-// Indexed by `${homeTeamId}_${awayTeamId}` using our internal IDs
 export type LiveScoresMap = Record<string, LiveScore>;
 
-// ─── Server-side cache (5 min) ────────────────────────────────────────────────
+// ─── Server-side cache ────────────────────────────────────────────────────────
 let _cache: { data: LiveScoresMap; at: number } | null = null;
-const CACHE_MS = 5 * 60 * 1000;
+const CACHE_MS = 5 * 60 * 1000; // 5 minutes
 
-// ─── Team name → internal ID mapping ─────────────────────────────────────────
-// Covers the different name formats API-Football may return
+// ─── Is any match happening right now? ───────────────────────────────────────
+// Returns true if any match is scheduled within the last 3h or next 30min.
+// This prevents calling the API during the ~20 hours per day with no matches.
+function anyMatchActive(): boolean {
+  const now = Date.now();
+  return ALL_MATCHES.some(m => {
+    if (m.homeTeamId === 'TBD') return false;
+    const start = new Date(m.scheduledAt).getTime();
+    return now >= start - 30 * 60 * 1000   // starts within 30 min
+        && now <= start + 3 * 60 * 60 * 1000; // finished within 3h
+  });
+}
+
+// ─── Team name → internal ID ──────────────────────────────────────────────────
 const API_TO_ID: Record<string, string> = {
   'Mexico': 'mexico',
   'South Africa': 'south-africa',
@@ -68,29 +79,22 @@ const API_TO_ID: Record<string, string> = {
   'Panama': 'panama',
 };
 
-// Live status codes from API-Football
-const LIVE_STATUSES = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'INT']);
+const LIVE_STATUSES     = new Set(['1H', 'HT', '2H', 'ET', 'BT', 'P', 'INT']);
 const FINISHED_STATUSES = new Set(['FT', 'AET', 'PEN']);
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseFixtures(fixtures: any[]): LiveScoresMap {
   const map: LiveScoresMap = {};
   for (const f of fixtures) {
-    const homeName: string = f.teams?.home?.name ?? '';
-    const awayName: string = f.teams?.away?.name ?? '';
-    const homeId = API_TO_ID[homeName];
-    const awayId = API_TO_ID[awayName];
+    const homeId = API_TO_ID[f.teams?.home?.name ?? ''];
+    const awayId = API_TO_ID[f.teams?.away?.name ?? ''];
     if (!homeId || !awayId) continue;
-
-    const statusShort: string = f.fixture?.status?.short ?? '';
-    const isLive = LIVE_STATUSES.has(statusShort);
-    const isFinished = FINISHED_STATUSES.has(statusShort);
-    if (!isLive && !isFinished) continue;
-
+    const s: string = f.fixture?.status?.short ?? '';
+    if (!LIVE_STATUSES.has(s) && !FINISHED_STATUSES.has(s)) continue;
     map[`${homeId}_${awayId}`] = {
       homeScore: f.goals?.home ?? 0,
       awayScore: f.goals?.away ?? 0,
-      status: isLive ? 'live' : 'finished',
+      status: LIVE_STATUSES.has(s) ? 'live' : 'finished',
       elapsed: f.fixture?.status?.elapsed ?? undefined,
     };
   }
@@ -99,43 +103,29 @@ function parseFixtures(fixtures: any[]): LiveScoresMap {
 
 export async function GET() {
   const apiKey = process.env.FOOTBALL_API_KEY;
+  if (!apiKey) return NextResponse.json({} as LiveScoresMap);
 
-  // Return empty map silently if no key configured
-  if (!apiKey) {
-    return NextResponse.json({} as LiveScoresMap);
+  // Outside match windows → return empty without touching the API
+  if (!anyMatchActive()) {
+    return NextResponse.json(_cache?.data ?? {});
   }
 
-  // Serve from cache if fresh
+  // Fresh cache → return it
   if (_cache && Date.now() - _cache.at < CACHE_MS) {
     return NextResponse.json(_cache.data);
   }
 
+  // One API call: all currently live WC2026 fixtures
   try {
-    // Fetch live WC2026 matches (league 1, season 2026)
-    const liveRes = await fetch(
+    const res = await fetch(
       'https://v3.football.api-sports.io/fixtures?league=1&season=2026&live=all',
       { headers: { 'x-apisports-key': apiKey } }
     );
-    const liveJson = await liveRes.json();
-
-    // Also fetch today's finished matches
-    const today = new Date().toISOString().split('T')[0];
-    const todayRes = await fetch(
-      `https://v3.football.api-sports.io/fixtures?league=1&season=2026&date=${today}`,
-      { headers: { 'x-apisports-key': apiKey } }
-    );
-    const todayJson = await todayRes.json();
-
-    const all = [
-      ...(liveJson.response ?? []),
-      ...(todayJson.response ?? []),
-    ];
-
-    const data = parseFixtures(all);
+    const json = await res.json();
+    const data = parseFixtures(json.response ?? []);
     _cache = { data, at: Date.now() };
     return NextResponse.json(data);
   } catch {
-    // Return cached data on error, or empty
     return NextResponse.json(_cache?.data ?? {});
   }
 }
