@@ -80,7 +80,7 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
 
       {/* Top 3 podium */}
       {entries.length >= 3 && (
-        <div className="flex items-end justify-center gap-2 mb-6 h-28">
+        <div className="flex items-end justify-center gap-2 mb-6 mt-2" style={{ minHeight: '200px' }}>
           {/* 2nd */}
           <PodiumItem entry={entries[1]} height="h-20" currentUser={currentUsername} />
           {/* 1st */}

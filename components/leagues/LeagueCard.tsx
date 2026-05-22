@@ -141,7 +141,7 @@ export default function LeagueCard({ league, memberCount, isJoined, index, backg
                     <span style={{ color: '#CD7F32' }} className="font-semibold">{prizes.third}%</span>
                   </span>
                 ) : (
-                  <span className="text-white/25 text-[11px]">100% vencedor</span>
+                  <span className="text-[11px] font-semibold" style={{ color: '#FFD700' }}>100% vencedor</span>
                 )}
                 <div
                   className="text-xs font-bold px-2.5 py-1 rounded-xl"
