@@ -84,9 +84,9 @@ export default function HeroLiveMatch() {
           <span
             style={{
               position: 'absolute',
-              fontSize: 160,
+              fontSize: 320,
               top: '50%',
-              left: '-8%',
+              left: '-25%',
               transform: 'translateY(-50%)',
               opacity: 0.22,
               filter: 'blur(10px)',
@@ -106,9 +106,9 @@ export default function HeroLiveMatch() {
           <span
             style={{
               position: 'absolute',
-              fontSize: 160,
+              fontSize: 320,
               top: '50%',
-              right: '-8%',
+              right: '-25%',
               transform: 'translateY(-50%)',
               opacity: 0.22,
               filter: 'blur(10px)',
