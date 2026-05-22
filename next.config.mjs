@@ -1,7 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['flagcdn.com'],
+    remotePatterns: [
+      { protocol: 'https', hostname: 'flagcdn.com' },
+      // Firebase Storage (avatar uploads)
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
+      { protocol: 'https', hostname: 'storage.googleapis.com' },
+    ],
   },
 };
 
