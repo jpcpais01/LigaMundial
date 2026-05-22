@@ -60,7 +60,7 @@ export default function NewsSection() {
         <span className="text-[11px] text-white/20">Mundial 2026</span>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
+      <div className="flex gap-3 overflow-x-auto pb-2 snap-x snap-mandatory scrollbar-none">
         {NEWS.map((item, i) => (
           <motion.a
             key={item.id}
