@@ -1,12 +1,12 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { getTeam, GROUPS } from '@/data/teams';
+import { getTeam } from '@/data/teams';
 import { GROUP_MATCHES, KNOCKOUT_MATCHES, JORNADAS } from '@/data/matches';
-import { formatMatchDate, formatTime, isBettingOpen } from '@/lib/utils';
+import { formatTime, isBettingOpen } from '@/lib/utils';
 import BetModal from './BetModal';
 import type { League, Match, Bet } from '@/types';
+import type { LiveScoresMap } from '@/app/api/live/route';
 
 interface GamesTabProps {
   league: League;
@@ -28,6 +28,20 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [viewMode, setViewMode] = useState<ViewMode>(league.matchPhase === 'cup' ? 'rounds' : 'rounds');
   const [activeBetMatch, setActiveBetMatch] = useState<Match | null>(null);
+  const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
+
+  // Poll live scores every 60 s
+  useEffect(() => {
+    async function fetchScores() {
+      try {
+        const res = await fetch('/api/live');
+        if (res.ok) setLiveScores(await res.json());
+      } catch {}
+    }
+    fetchScores();
+    const iv = setInterval(fetchScores, 60_000);
+    return () => clearInterval(iv);
+  }, []);
 
   // Build rounds/filters based on league type
   const rounds = useMemo(() => {
@@ -95,6 +109,7 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
                 bet={bet}
                 bettingOpen={open}
                 index={i}
+                liveScore={liveScores[`${match.homeTeamId}_${match.awayTeamId}`]}
                 onBet={() => setActiveBetMatch(match)}
               />
             );
@@ -112,19 +127,24 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
   );
 }
 
+import type { LiveScore } from '@/app/api/live/route';
+
 function MatchRow({
-  match, bet, bettingOpen, index, onBet,
+  match, bet, bettingOpen, index, liveScore, onBet,
 }: {
   match: Match;
   bet: Bet | null;
   bettingOpen: boolean;
   index: number;
+  liveScore?: LiveScore;
   onBet: () => void;
 }) {
   const home = getTeam(match.homeTeamId);
   const away = getTeam(match.awayTeamId);
-  const isLive = match.status === 'live';
-  const isFinished = match.status === 'finished';
+  const isLive = liveScore?.status === 'live' || match.status === 'live';
+  const isFinished = liveScore?.status === 'finished' || match.status === 'finished';
+  const homeScore = liveScore?.homeScore ?? match.homeScore;
+  const awayScore = liveScore?.awayScore ?? match.awayScore;
   const isTBD = match.homeTeamId === 'TBD';
 
   return (
@@ -165,9 +185,9 @@ function MatchRow({
 
           {/* Score / VS */}
           <div className="w-16 text-center flex-shrink-0">
-            {(isLive || isFinished) && match.homeScore !== undefined ? (
+            {(isLive || isFinished) && homeScore !== undefined ? (
               <span className="text-white font-black text-base">
-                {match.homeScore} – {match.awayScore}
+                {homeScore} – {awayScore}
               </span>
             ) : (
               <span className="text-white/20 text-xs font-medium">vs</span>

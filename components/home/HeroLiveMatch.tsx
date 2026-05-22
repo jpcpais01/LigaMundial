@@ -6,13 +6,14 @@ import { ALL_MATCHES } from '@/data/matches';
 import { getTeam } from '@/data/teams';
 import { formatMatchDate, formatTime, timeUntil } from '@/lib/utils';
 import type { Match } from '@/types';
+import type { LiveScoresMap } from '@/app/api/live/route';
 
 function getNextOrLiveMatch(): Match | null {
   const now = new Date();
   const live = ALL_MATCHES.find(m => m.status === 'live');
   if (live) return live;
   const upcoming = ALL_MATCHES
-    .filter(m => new Date(m.scheduledAt) > now)
+    .filter(m => new Date(m.scheduledAt) > now && m.homeTeamId !== 'TBD')
     .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
   return upcoming[0] || null;
 }
@@ -20,15 +21,31 @@ function getNextOrLiveMatch(): Match | null {
 export default function HeroLiveMatch() {
   const [match, setMatch] = useState<Match | null>(null);
   const [countdown, setCountdown] = useState('');
+  const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
 
+  // Pick match
   useEffect(() => { setMatch(getNextOrLiveMatch()); }, []);
 
+  // Countdown
   useEffect(() => {
     if (!match || match.status !== 'scheduled') return;
     const interval = setInterval(() => setCountdown(timeUntil(match.scheduledAt)), 1000);
     setCountdown(timeUntil(match.scheduledAt));
     return () => clearInterval(interval);
   }, [match]);
+
+  // Poll live scores every 60 s
+  useEffect(() => {
+    async function fetchScores() {
+      try {
+        const res = await fetch('/api/live');
+        if (res.ok) setLiveScores(await res.json());
+      } catch {}
+    }
+    fetchScores();
+    const interval = setInterval(fetchScores, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   if (!match) {
     return (
@@ -40,8 +57,13 @@ export default function HeroLiveMatch() {
 
   const home = getTeam(match.homeTeamId);
   const away = getTeam(match.awayTeamId);
-  const isLive = match.status === 'live';
-  const isFinished = match.status === 'finished';
+
+  const liveKey = `${match.homeTeamId}_${match.awayTeamId}`;
+  const live = liveScores[liveKey];
+  const isLive = live?.status === 'live' || match.status === 'live';
+  const isFinished = live?.status === 'finished' || match.status === 'finished';
+  const homeScore = live?.homeScore ?? match.homeScore;
+  const awayScore = live?.awayScore ?? match.awayScore;
 
   return (
     <motion.div
@@ -66,15 +88,15 @@ export default function HeroLiveMatch() {
         {/* Status */}
         <div className="relative flex items-center justify-between mb-5">
           <span className="text-[11px] font-medium uppercase tracking-[0.12em] text-white/25">
-            {match.group ? `Grupo ${match.group}` : match.phase === 'final' ? 'Final' : match.phase.toUpperCase()}
+            {match.group ? `Grupo ${match.group}` : match.phase === 'final' ? 'Final' : match.phase?.toUpperCase()}
           </span>
           {isLive && (
             <span className="flex items-center gap-1.5 text-emerald-400 text-[10px] font-bold uppercase tracking-wider bg-emerald-400/10 border border-emerald-400/20 px-2.5 py-1 rounded-full">
               <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-              Ao Vivo
+              {live?.elapsed ? `${live.elapsed}'` : 'Ao Vivo'}
             </span>
           )}
-          {isFinished && (
+          {isFinished && !isLive && (
             <span className="text-[10px] text-white/30 uppercase tracking-wider">Terminado</span>
           )}
         </div>
@@ -92,11 +114,11 @@ export default function HeroLiveMatch() {
 
           {/* Score / VS */}
           <div className="flex flex-col items-center gap-1 flex-shrink-0">
-            {(isLive || isFinished) && match.homeScore !== undefined ? (
+            {(isLive || isFinished) && homeScore !== undefined ? (
               <div className="flex items-center gap-3">
-                <span className="text-4xl font-black text-white tabular-nums">{match.homeScore}</span>
+                <span className="text-4xl font-black text-white tabular-nums">{homeScore}</span>
                 <span className="text-white/20 text-xl">–</span>
-                <span className="text-4xl font-black text-white tabular-nums">{match.awayScore}</span>
+                <span className="text-4xl font-black text-white tabular-nums">{awayScore}</span>
               </div>
             ) : (
               <span className="text-white/15 font-bold text-xl tracking-widest">VS</span>

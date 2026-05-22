@@ -1,86 +1,99 @@
 import { Team } from '@/types';
 
 export const TEAMS: Record<string, Team> = {
-  // GRUPO A
-  usa:        { id: 'usa',        name: 'Estados Unidos',  shortName: 'USA', flag: '🇺🇸', group: 'A' },
-  brasil:     { id: 'brasil',     name: 'Brasil',          shortName: 'BRA', flag: '🇧🇷', group: 'A' },
-  marrocos:   { id: 'marrocos',   name: 'Marrocos',        shortName: 'MAR', flag: '🇲🇦', group: 'A' },
-  coreia:     { id: 'coreia',     name: 'Coreia do Sul',   shortName: 'KOR', flag: '🇰🇷', group: 'A' },
+  // GROUP A
+  'mexico':        { id: 'mexico',        name: 'México',              shortName: 'MEX', flag: '🇲🇽', group: 'A' },
+  'south-africa':  { id: 'south-africa',  name: 'África do Sul',       shortName: 'RSA', flag: '🇿🇦', group: 'A' },
+  'south-korea':   { id: 'south-korea',   name: 'Coreia do Sul',       shortName: 'KOR', flag: '🇰🇷', group: 'A' },
+  'czech-rep':     { id: 'czech-rep',     name: 'Rep. Checa',          shortName: 'CZE', flag: '🇨🇿', group: 'A' },
 
-  // GRUPO B
-  canada:     { id: 'canada',     name: 'Canadá',          shortName: 'CAN', flag: '🇨🇦', group: 'B' },
-  franca:     { id: 'franca',     name: 'França',          shortName: 'FRA', flag: '🇫🇷', group: 'B' },
-  japao:      { id: 'japao',      name: 'Japão',           shortName: 'JPN', flag: '🇯🇵', group: 'B' },
-  nigeria:    { id: 'nigeria',    name: 'Nigéria',         shortName: 'NGA', flag: '🇳🇬', group: 'B' },
+  // GROUP B
+  'canada':        { id: 'canada',        name: 'Canadá',              shortName: 'CAN', flag: '🇨🇦', group: 'B' },
+  'bosnia':        { id: 'bosnia',        name: 'Bósnia e Herzegovina', shortName: 'BIH', flag: '🇧🇦', group: 'B' },
+  'qatar':         { id: 'qatar',         name: 'Qatar',               shortName: 'QAT', flag: '🇶🇦', group: 'B' },
+  'switzerland':   { id: 'switzerland',   name: 'Suíça',               shortName: 'SUI', flag: '🇨🇭', group: 'B' },
 
-  // GRUPO C
-  mexico:     { id: 'mexico',     name: 'México',          shortName: 'MEX', flag: '🇲🇽', group: 'C' },
-  argentina:  { id: 'argentina',  name: 'Argentina',       shortName: 'ARG', flag: '🇦🇷', group: 'C' },
-  australia:  { id: 'australia',  name: 'Austrália',       shortName: 'AUS', flag: '🇦🇺', group: 'C' },
-  argelia:    { id: 'argelia',    name: 'Argélia',         shortName: 'ALG', flag: '🇩🇿', group: 'C' },
+  // GROUP C
+  'brazil':        { id: 'brazil',        name: 'Brasil',              shortName: 'BRA', flag: '🇧🇷', group: 'C' },
+  'morocco':       { id: 'morocco',       name: 'Marrocos',            shortName: 'MAR', flag: '🇲🇦', group: 'C' },
+  'haiti':         { id: 'haiti',         name: 'Haiti',               shortName: 'HAI', flag: '🇭🇹', group: 'C' },
+  'scotland':      { id: 'scotland',      name: 'Escócia',             shortName: 'SCO', flag: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', group: 'C' },
 
-  // GRUPO D
-  espanha:    { id: 'espanha',    name: 'Espanha',         shortName: 'ESP', flag: '🇪🇸', group: 'D' },
-  alemanha:   { id: 'alemanha',   name: 'Alemanha',        shortName: 'GER', flag: '🇩🇪', group: 'D' },
-  senegal:    { id: 'senegal',    name: 'Senegal',         shortName: 'SEN', flag: '🇸🇳', group: 'D' },
-  honduras:   { id: 'honduras',   name: 'Honduras',        shortName: 'HON', flag: '🇭🇳', group: 'D' },
+  // GROUP D
+  'usa':           { id: 'usa',           name: 'Estados Unidos',      shortName: 'USA', flag: '🇺🇸', group: 'D' },
+  'paraguay':      { id: 'paraguay',      name: 'Paraguai',            shortName: 'PAR', flag: '🇵🇾', group: 'D' },
+  'australia':     { id: 'australia',     name: 'Austrália',           shortName: 'AUS', flag: '🇦🇺', group: 'D' },
+  'turkey':        { id: 'turkey',        name: 'Turquia',             shortName: 'TUR', flag: '🇹🇷', group: 'D' },
 
-  // GRUPO E
-  portugal:   { id: 'portugal',   name: 'Portugal',        shortName: 'POR', flag: '🇵🇹', group: 'E' },
-  belgica:    { id: 'belgica',    name: 'Bélgica',         shortName: 'BEL', flag: '🇧🇪', group: 'E' },
-  ira:        { id: 'ira',        name: 'Irão',            shortName: 'IRN', flag: '🇮🇷', group: 'E' },
-  chile:      { id: 'chile',      name: 'Chile',           shortName: 'CHI', flag: '🇨🇱', group: 'E' },
+  // GROUP E
+  'germany':       { id: 'germany',       name: 'Alemanha',            shortName: 'GER', flag: '🇩🇪', group: 'E' },
+  'curacao':       { id: 'curacao',       name: 'Curaçao',             shortName: 'CUW', flag: '🇨🇼', group: 'E' },
+  'ivory-coast':   { id: 'ivory-coast',   name: 'Costa do Marfim',     shortName: 'CIV', flag: '🇨🇮', group: 'E' },
+  'ecuador':       { id: 'ecuador',       name: 'Equador',             shortName: 'ECU', flag: '🇪🇨', group: 'E' },
 
-  // GRUPO F
-  inglaterra: { id: 'inglaterra', name: 'Inglaterra',      shortName: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', group: 'F' },
-  holanda:    { id: 'holanda',    name: 'Holanda',         shortName: 'NED', flag: '🇳🇱', group: 'F' },
-  egito:      { id: 'egito',      name: 'Egito',           shortName: 'EGY', flag: '🇪🇬', group: 'F' },
-  paraguai:   { id: 'paraguai',   name: 'Paraguai',        shortName: 'PAR', flag: '🇵🇾', group: 'F' },
+  // GROUP F
+  'netherlands':   { id: 'netherlands',   name: 'Holanda',             shortName: 'NED', flag: '🇳🇱', group: 'F' },
+  'japan':         { id: 'japan',         name: 'Japão',               shortName: 'JPN', flag: '🇯🇵', group: 'F' },
+  'sweden':        { id: 'sweden',        name: 'Suécia',              shortName: 'SWE', flag: '🇸🇪', group: 'F' },
+  'tunisia':       { id: 'tunisia',       name: 'Tunísia',             shortName: 'TUN', flag: '🇹🇳', group: 'F' },
 
-  // GRUPO G
-  italia:     { id: 'italia',     name: 'Itália',          shortName: 'ITA', flag: '🇮🇹', group: 'G' },
-  colombia:   { id: 'colombia',   name: 'Colômbia',        shortName: 'COL', flag: '🇨🇴', group: 'G' },
-  gana:       { id: 'gana',       name: 'Gana',            shortName: 'GHA', flag: '🇬🇭', group: 'G' },
-  costarica:  { id: 'costarica',  name: 'Costa Rica',      shortName: 'CRC', flag: '🇨🇷', group: 'G' },
+  // GROUP G
+  'belgium':       { id: 'belgium',       name: 'Bélgica',             shortName: 'BEL', flag: '🇧🇪', group: 'G' },
+  'egypt':         { id: 'egypt',         name: 'Egito',               shortName: 'EGY', flag: '🇪🇬', group: 'G' },
+  'iran':          { id: 'iran',          name: 'Irão',                shortName: 'IRN', flag: '🇮🇷', group: 'G' },
+  'new-zealand':   { id: 'new-zealand',   name: 'Nova Zelândia',       shortName: 'NZL', flag: '🇳🇿', group: 'G' },
 
-  // GRUPO H
-  croacia:    { id: 'croacia',    name: 'Croácia',         shortName: 'CRO', flag: '🇭🇷', group: 'H' },
-  dinamarca:  { id: 'dinamarca',  name: 'Dinamarca',       shortName: 'DEN', flag: '🇩🇰', group: 'H' },
-  arabia:     { id: 'arabia',     name: 'Arábia Saudita',  shortName: 'KSA', flag: '🇸🇦', group: 'H' },
-  venezuela:  { id: 'venezuela',  name: 'Venezuela',       shortName: 'VEN', flag: '🇻🇪', group: 'H' },
+  // GROUP H
+  'spain':         { id: 'spain',         name: 'Espanha',             shortName: 'ESP', flag: '🇪🇸', group: 'H' },
+  'cape-verde':    { id: 'cape-verde',    name: 'Cabo Verde',          shortName: 'CPV', flag: '🇨🇻', group: 'H' },
+  'saudi-arabia':  { id: 'saudi-arabia',  name: 'Arábia Saudita',      shortName: 'KSA', flag: '🇸🇦', group: 'H' },
+  'uruguay':       { id: 'uruguay',       name: 'Uruguai',             shortName: 'URU', flag: '🇺🇾', group: 'H' },
 
-  // GRUPO I
-  suica:      { id: 'suica',      name: 'Suíça',           shortName: 'SUI', flag: '🇨🇭', group: 'I' },
-  uruguai:    { id: 'uruguai',    name: 'Uruguai',         shortName: 'URU', flag: '🇺🇾', group: 'I' },
-  costamarfim:{ id: 'costamarfim',name: 'Costa do Marfim', shortName: 'CIV', flag: '🇨🇮', group: 'I' },
-  elsalvador: { id: 'elsalvador', name: 'El Salvador',     shortName: 'SLV', flag: '🇸🇻', group: 'I' },
+  // GROUP I
+  'france':        { id: 'france',        name: 'França',              shortName: 'FRA', flag: '🇫🇷', group: 'I' },
+  'senegal':       { id: 'senegal',       name: 'Senegal',             shortName: 'SEN', flag: '🇸🇳', group: 'I' },
+  'iraq':          { id: 'iraq',          name: 'Iraque',              shortName: 'IRQ', flag: '🇮🇶', group: 'I' },
+  'norway':        { id: 'norway',        name: 'Noruega',             shortName: 'NOR', flag: '🇳🇴', group: 'I' },
 
-  // GRUPO J
-  serbia:     { id: 'serbia',     name: 'Sérvia',          shortName: 'SRB', flag: '🇷🇸', group: 'J' },
-  turquia:    { id: 'turquia',    name: 'Turquia',         shortName: 'TUR', flag: '🇹🇷', group: 'J' },
-  africasul:  { id: 'africasul',  name: 'África do Sul',   shortName: 'RSA', flag: '🇿🇦', group: 'J' },
-  jamaica:    { id: 'jamaica',    name: 'Jamaica',         shortName: 'JAM', flag: '🇯🇲', group: 'J' },
+  // GROUP J
+  'argentina':     { id: 'argentina',     name: 'Argentina',           shortName: 'ARG', flag: '🇦🇷', group: 'J' },
+  'algeria':       { id: 'algeria',       name: 'Argélia',             shortName: 'ALG', flag: '🇩🇿', group: 'J' },
+  'austria':       { id: 'austria',       name: 'Áustria',             shortName: 'AUT', flag: '🇦🇹', group: 'J' },
+  'jordan':        { id: 'jordan',        name: 'Jordânia',            shortName: 'JOR', flag: '🇯🇴', group: 'J' },
 
-  // GRUPO K
-  polonia:    { id: 'polonia',    name: 'Polónia',         shortName: 'POL', flag: '🇵🇱', group: 'K' },
-  equador:    { id: 'equador',    name: 'Equador',         shortName: 'ECU', flag: '🇪🇨', group: 'K' },
-  tunisia:    { id: 'tunisia',    name: 'Tunísia',         shortName: 'TUN', flag: '🇹🇳', group: 'K' },
-  novazelandia:{ id: 'novazelandia', name: 'Nova Zelândia', shortName: 'NZL', flag: '🇳🇿', group: 'K' },
+  // GROUP K
+  'portugal':      { id: 'portugal',      name: 'Portugal',            shortName: 'POR', flag: '🇵🇹', group: 'K' },
+  'dr-congo':      { id: 'dr-congo',      name: 'RD Congo',            shortName: 'COD', flag: '🇨🇩', group: 'K' },
+  'uzbekistan':    { id: 'uzbekistan',    name: 'Uzbequistão',         shortName: 'UZB', flag: '🇺🇿', group: 'K' },
+  'colombia':      { id: 'colombia',      name: 'Colômbia',            shortName: 'COL', flag: '🇨🇴', group: 'K' },
 
-  // GRUPO L
-  romenia:    { id: 'romenia',    name: 'Roménia',         shortName: 'ROU', flag: '🇷🇴', group: 'L' },
-  eslovenia:  { id: 'eslovenia',  name: 'Eslovénia',       shortName: 'SVN', flag: '🇸🇮', group: 'L' },
-  peru:       { id: 'peru',       name: 'Peru',            shortName: 'PER', flag: '🇵🇪', group: 'L' },
-  jordania:   { id: 'jordania',   name: 'Jordânia',        shortName: 'JOR', flag: '🇯🇴', group: 'L' },
+  // GROUP L
+  'england':       { id: 'england',       name: 'Inglaterra',          shortName: 'ENG', flag: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', group: 'L' },
+  'croatia':       { id: 'croatia',       name: 'Croácia',             shortName: 'CRO', flag: '🇭🇷', group: 'L' },
+  'ghana':         { id: 'ghana',         name: 'Gana',                shortName: 'GHA', flag: '🇬🇭', group: 'L' },
+  'panama':        { id: 'panama',        name: 'Panamá',              shortName: 'PAN', flag: '🇵🇦', group: 'L' },
+
+  // Placeholder for knockout TBD slots
+  'TBD': { id: 'TBD', name: 'A definir', shortName: 'TBD', flag: '🏳', group: '' },
 };
 
-export const TEAMS_LIST = Object.values(TEAMS);
+export function getTeam(id: string): Team {
+  return TEAMS[id] || { id, name: id, shortName: id, flag: '🏳', group: '' };
+}
 
-export const getTeam = (id: string): Team => {
-  return TEAMS[id] || { id, name: id, shortName: id.toUpperCase().slice(0, 3), flag: '🏳️', group: '?' };
+export const TEAMS_LIST: Team[] = Object.values(TEAMS).filter(t => t.id !== 'TBD');
+
+export const GROUPS: Record<string, string[]> = {
+  A: ['mexico', 'south-africa', 'south-korea', 'czech-rep'],
+  B: ['canada', 'bosnia', 'qatar', 'switzerland'],
+  C: ['brazil', 'morocco', 'haiti', 'scotland'],
+  D: ['usa', 'paraguay', 'australia', 'turkey'],
+  E: ['germany', 'curacao', 'ivory-coast', 'ecuador'],
+  F: ['netherlands', 'japan', 'sweden', 'tunisia'],
+  G: ['belgium', 'egypt', 'iran', 'new-zealand'],
+  H: ['spain', 'cape-verde', 'saudi-arabia', 'uruguay'],
+  I: ['france', 'senegal', 'iraq', 'norway'],
+  J: ['argentina', 'algeria', 'austria', 'jordan'],
+  K: ['portugal', 'dr-congo', 'uzbekistan', 'colombia'],
+  L: ['england', 'croatia', 'ghana', 'panama'],
 };
-
-export const getTeamsByGroup = (group: string): Team[] =>
-  TEAMS_LIST.filter(t => t.group === group);
-
-export const GROUPS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L'];
