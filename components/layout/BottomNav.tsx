@@ -40,23 +40,22 @@ export default function BottomNav() {
               <Link key={item.href} href={item.href} className="flex-1">
                 <motion.div
                   className={cn(
-                    'flex flex-col items-center gap-0.5 py-2 rounded-xl transition-colors',
+                    'relative flex flex-col items-center gap-0.5 py-2 rounded-xl transition-colors w-full',
                     active ? 'text-gold' : 'text-white/40'
                   )}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <div className="relative w-[22px] h-[22px] flex items-center justify-center">
-                    <item.icon size={22} strokeWidth={active ? 2.5 : 1.8} />
-                    {active && (
-                      <motion.div
-                        layoutId="nav-dot"
-                        className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold"
-                      />
-                    )}
-                  </div>
+                  <item.icon size={22} strokeWidth={active ? 2.5 : 1.8} />
                   <span className={cn('text-[10px] font-medium', active ? 'text-gold' : 'text-white/40')}>
                     {item.label}
                   </span>
+                  {active && (
+                    <motion.div
+                      layoutId="nav-dot"
+                      className="absolute -bottom-0.5 w-1 h-1 rounded-full bg-gold"
+                      style={{ left: 'calc(50% - 2px)' }}
+                    />
+                  )}
                 </motion.div>
               </Link>
             );
