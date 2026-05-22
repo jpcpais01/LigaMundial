@@ -3,6 +3,7 @@ import './globals.css';
 import { AuthProvider } from '@/components/auth/AuthContext';
 import AuthModal from '@/components/auth/AuthModal';
 import BottomNav from '@/components/layout/BottomNav';
+import InstallPrompt from '@/components/layout/InstallPrompt';
 
 export const metadata: Metadata = {
   title: 'LigaMundial 2026',
@@ -45,6 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </main>
           <BottomNav />
           <AuthModal />
+          <InstallPrompt />
         </AuthProvider>
       </body>
     </html>
