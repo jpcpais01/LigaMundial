@@ -24,21 +24,33 @@ export default function Icon() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '4px',
+            gap: '0px',
           }}
         >
-          <div style={{ fontSize: '200px', lineHeight: 1 }}>⚽</div>
+          <div style={{ fontSize: '140px', lineHeight: 1 }}>⚽</div>
           <div
             style={{
-              fontSize: '100px',
+              fontSize: '90px',
               fontWeight: 900,
               color: '#FFD700',
               fontFamily: 'sans-serif',
-              letterSpacing: '-4px',
+              letterSpacing: '-3px',
               lineHeight: 1,
             }}
           >
-            LM
+            Mundial
+          </div>
+          <div
+            style={{
+              fontSize: '60px',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)',
+              fontFamily: 'sans-serif',
+              letterSpacing: '2px',
+              lineHeight: 1,
+            }}
+          >
+            2026
           </div>
         </div>
       </div>

@@ -24,21 +24,33 @@ export default function AppleIcon() {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '2px',
+            gap: '0px',
           }}
         >
-          <div style={{ fontSize: '72px', lineHeight: 1 }}>⚽</div>
+          <div style={{ fontSize: '52px', lineHeight: 1 }}>⚽</div>
           <div
             style={{
-              fontSize: '38px',
+              fontSize: '34px',
               fontWeight: 900,
               color: '#FFD700',
               fontFamily: 'sans-serif',
-              letterSpacing: '-2px',
+              letterSpacing: '-1px',
+              lineHeight: 1.1,
+            }}
+          >
+            Mundial
+          </div>
+          <div
+            style={{
+              fontSize: '22px',
+              fontWeight: 700,
+              color: 'rgba(255,255,255,0.5)',
+              fontFamily: 'sans-serif',
+              letterSpacing: '1px',
               lineHeight: 1,
             }}
           >
-            LM
+            2026
           </div>
         </div>
       </div>
