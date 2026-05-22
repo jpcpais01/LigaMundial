@@ -58,6 +58,19 @@ export async function isLeagueMember(leagueId: string, username: string): Promis
   return snap.exists();
 }
 
+export async function leaveLeague(leagueId: string, username: string): Promise<void> {
+  // Remove member doc
+  const { deleteDoc } = await import('firebase/firestore');
+  await deleteDoc(doc(db, 'leagueMembers', `${leagueId}_${username}`));
+  // Remove from user's joinedLeagues list
+  const userRef = doc(db, 'users', username);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    const current: string[] = userSnap.data().joinedLeagues || [];
+    await updateDoc(userRef, { joinedLeagues: current.filter(id => id !== leagueId) });
+  }
+}
+
 export async function getLeagueMembers(leagueId: string): Promise<LeagueMember[]> {
   const q = query(collection(db, 'leagueMembers'), where('leagueId', '==', leagueId));
   const snaps = await getDocs(q);

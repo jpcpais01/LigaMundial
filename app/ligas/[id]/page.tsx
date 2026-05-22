@@ -1,12 +1,12 @@
 'use client';
 import { useState, useEffect, use } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Users, Loader2, CheckCircle, LogIn, Info } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { ChevronLeft, Users, Loader2, CheckCircle, LogIn, Info, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { getLeague } from '@/data/leagues';
+import { GROUP_MATCHES, KNOCKOUT_MATCHES } from '@/data/matches';
 import { useAuthContext } from '@/components/auth/AuthContext';
-import { joinLeague, getLeagueMembers, getUserBetsForLeague } from '@/lib/firestore';
+import { joinLeague, leaveLeague, getLeagueMembers, getUserBetsForLeague } from '@/lib/firestore';
 import GamesTab from '@/components/leagues/GamesTab';
 import LeaderboardTab from '@/components/leagues/LeaderboardTab';
 import SpecialBetView from '@/components/leagues/SpecialBetView';
@@ -35,6 +35,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [bets, setBets] = useState<Bet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const accent = ACCENT[id] || '#3b82f6';
 
@@ -66,6 +68,27 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
   const isSpecial = league.type === 'champion' || league.type === 'scorer';
   const prizePool = memberCount * league.entryFee;
+
+  // Can leave only if the first match of this league hasn't started yet
+  const firstMatch = (() => {
+    const pool = league.matchPhase === 'cup' ? KNOCKOUT_MATCHES : GROUP_MATCHES;
+    return pool.filter(m => m.homeTeamId !== 'TBD')
+               .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
+  })();
+  const canLeave = firstMatch ? new Date(firstMatch.scheduledAt) > new Date() : false;
+
+  const handleLeave = async () => {
+    if (!user) return;
+    setLeaving(true);
+    try {
+      await leaveLeague(league.id, user.username);
+      setJoined(false);
+      setMemberCount(c => Math.max(0, c - 1));
+      setShowLeaveConfirm(false);
+    } finally {
+      setLeaving(false);
+    }
+  };
 
   const handleJoin = async () => {
     if (!user) { setShowAuthModal(true); return; }
@@ -164,10 +187,44 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
               key="joined"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="mx-4 mb-4 flex items-center gap-2.5 bg-emerald-500/6 border border-emerald-500/15 rounded-2xl px-4 py-3"
+              className="mx-4 mb-4"
             >
-              <CheckCircle size={14} className="text-emerald-400" />
-              <p className="text-emerald-400/80 text-xs font-medium">Inscrito nesta liga</p>
+              {!showLeaveConfirm ? (
+                <div className="flex items-center justify-between bg-emerald-500/6 border border-emerald-500/15 rounded-2xl px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    <CheckCircle size={14} className="text-emerald-400" />
+                    <p className="text-emerald-400/80 text-xs font-medium">Inscrito nesta liga</p>
+                  </div>
+                  {canLeave && (
+                    <button
+                      onClick={() => setShowLeaveConfirm(true)}
+                      className="flex items-center gap-1.5 text-white/25 text-xs hover:text-white/45 transition-colors"
+                    >
+                      <LogOut size={12} />
+                      Sair
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <div className="bg-red-500/8 border border-red-500/20 rounded-2xl px-4 py-3.5">
+                  <p className="text-white/70 text-sm font-medium mb-3">Tens a certeza que queres sair da liga?</p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setShowLeaveConfirm(false)}
+                      className="flex-1 py-2 rounded-xl bg-white/6 border border-white/8 text-white/50 text-sm font-medium"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleLeave}
+                      disabled={leaving}
+                      className="flex-1 py-2 rounded-xl bg-red-500/20 border border-red-500/30 text-red-400 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {leaving ? <Loader2 size={13} className="animate-spin" /> : 'Sair da liga'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
