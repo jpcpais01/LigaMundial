@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import { ALL_MATCHES } from '@/data/matches';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -10,19 +12,22 @@ export type LiveScore = {
 };
 export type LiveScoresMap = Record<string, LiveScore>;
 
-// ─── Server-side cache ────────────────────────────────────────────────────────
-let _cache: { data: LiveScoresMap; at: number } | null = null;
-const CACHE_MS = 5 * 60 * 1000; // 5 minutes
+type FirestoreLiveDoc = {
+  scores: LiveScoresMap;
+  updatedAt: number; // ms timestamp
+};
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+const FIRESTORE_DOC  = 'liveScores/current';
+const CACHE_MS       = 5 * 60 * 1000; // 5 min — only 1 API call per 5 min globally
 
 // ─── Is any match happening right now? ───────────────────────────────────────
-// Returns true if any match is scheduled within the last 3h or next 30min.
-// This prevents calling the API during the ~20 hours per day with no matches.
 function anyMatchActive(): boolean {
   const now = Date.now();
   return ALL_MATCHES.some(m => {
     if (m.homeTeamId === 'TBD') return false;
     const start = new Date(m.scheduledAt).getTime();
-    return now >= start - 30 * 60 * 1000   // starts within 30 min
+    return now >= start - 30 * 60 * 1000      // starts within 30 min
         && now <= start + 3 * 60 * 60 * 1000; // finished within 3h
   });
 }
@@ -105,27 +110,40 @@ export async function GET() {
   const apiKey = process.env.FOOTBALL_API_KEY;
   if (!apiKey) return NextResponse.json({} as LiveScoresMap);
 
-  // Outside match windows → return empty without touching the API
+  // Step 1 — Read the shared Firestore cache (common across all serverless instances)
+  let firestoreDoc: FirestoreLiveDoc | null = null;
+  try {
+    const snap = await getDoc(doc(db, 'liveScores', 'current'));
+    if (snap.exists()) firestoreDoc = snap.data() as FirestoreLiveDoc;
+  } catch { /* Firestore read failed — fall through */ }
+
+  const cacheAge = firestoreDoc ? Date.now() - firestoreDoc.updatedAt : Infinity;
+  const cacheIsFresh = cacheAge < CACHE_MS;
+
+  // Step 2 — If cache is fresh, return it (no API call needed)
+  if (cacheIsFresh && firestoreDoc) {
+    return NextResponse.json(firestoreDoc.scores);
+  }
+
+  // Step 3 — Outside match windows, return stale/empty without calling API
   if (!anyMatchActive()) {
-    return NextResponse.json(_cache?.data ?? {});
+    return NextResponse.json(firestoreDoc?.scores ?? {});
   }
 
-  // Fresh cache → return it
-  if (_cache && Date.now() - _cache.at < CACHE_MS) {
-    return NextResponse.json(_cache.data);
-  }
-
-  // One API call: all currently live WC2026 fixtures
+  // Step 4 — Call API-Football once, write to Firestore so all instances share it
   try {
     const res = await fetch(
       'https://v3.football.api-sports.io/fixtures?league=1&season=2026&live=all',
       { headers: { 'x-apisports-key': apiKey } }
     );
     const json = await res.json();
-    const data = parseFixtures(json.response ?? []);
-    _cache = { data, at: Date.now() };
-    return NextResponse.json(data);
+    const scores = parseFixtures(json.response ?? []);
+
+    const newDoc: FirestoreLiveDoc = { scores, updatedAt: Date.now() };
+    await setDoc(doc(db, 'liveScores', 'current'), newDoc);
+
+    return NextResponse.json(scores);
   } catch {
-    return NextResponse.json(_cache?.data ?? {});
+    return NextResponse.json(firestoreDoc?.scores ?? {});
   }
 }
