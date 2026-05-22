@@ -6,8 +6,6 @@ import { useAuthContext } from '@/components/auth/AuthContext';
 import { LEAGUES } from '@/data/leagues';
 import Link from 'next/link';
 import { getInitials } from '@/lib/utils';
-import { storage } from '@/lib/firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { updateUserDoc } from '@/lib/firestore';
 
 const ACCENT: Record<string, string> = {
@@ -17,6 +15,30 @@ const ACCENT: Record<string, string> = {
   'extra-campeao':  '#fbbf24',
   'extra-marcador': '#fb7185',
 };
+
+// Compress + crop image to 120×120 JPEG base64 (~8–15 KB)
+function compressAvatar(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const SIZE = 120;
+      const canvas = document.createElement('canvas');
+      canvas.width = SIZE;
+      canvas.height = SIZE;
+      const ctx = canvas.getContext('2d')!;
+      // Centre-crop
+      const side = Math.min(img.width, img.height);
+      const sx = (img.width - side) / 2;
+      const sy = (img.height - side) / 2;
+      ctx.drawImage(img, sx, sy, side, side, 0, 0, SIZE, SIZE);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
 
 export default function PerfilPage() {
   const { user, logout, setShowAuthModal, updateUser } = useAuthContext();
@@ -30,13 +52,11 @@ export default function PerfilPage() {
     setUploading(true);
     setUploadError(false);
     try {
-      const storageRef = ref(storage, `avatars/${user.username}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      await updateUserDoc(user.username, { avatarUrl: url });
-      updateUser({ avatarUrl: url });
+      const base64 = await compressAvatar(file);
+      await updateUserDoc(user.username, { avatarUrl: base64 });
+      updateUser({ avatarUrl: base64 });
     } catch (err) {
-      console.error('Avatar upload failed', err);
+      console.error('Avatar save failed', err);
       setUploadError(true);
       setTimeout(() => setUploadError(false), 4000);
     } finally {
@@ -103,7 +123,7 @@ export default function PerfilPage() {
                 {getInitials(user.username)}
               </div>
             )}
-            {/* Overlay — always visible on mobile (no hover) */}
+            {/* Overlay — always visible */}
             <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
               {uploading
                 ? <Loader2 size={16} className="text-white animate-spin" />
@@ -127,7 +147,7 @@ export default function PerfilPage() {
             Membro desde {new Date(user.createdAt).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
           </p>
           {uploadError
-            ? <p className="text-red-400 text-[10px] mt-1">Erro ao fazer upload. Verifica as regras do Storage.</p>
+            ? <p className="text-red-400 text-[10px] mt-1">Erro ao guardar foto. Tenta de novo.</p>
             : <p className="text-white/20 text-[10px] mt-1">Toca no avatar para mudar a foto</p>
           }
         </div>
