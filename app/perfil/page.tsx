@@ -22,11 +22,13 @@ export default function PerfilPage() {
   const { user, logout, setShowAuthModal, updateUser } = useAuthContext();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
 
   async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     setUploading(true);
+    setUploadError(false);
     try {
       const storageRef = ref(storage, `avatars/${user.username}`);
       await uploadBytes(storageRef, file);
@@ -35,9 +37,10 @@ export default function PerfilPage() {
       updateUser({ avatarUrl: url });
     } catch (err) {
       console.error('Avatar upload failed', err);
+      setUploadError(true);
+      setTimeout(() => setUploadError(false), 4000);
     } finally {
       setUploading(false);
-      // Reset input so same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
   }
@@ -84,7 +87,7 @@ export default function PerfilPage() {
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="relative w-16 h-16 rounded-2xl overflow-hidden group"
+            className="relative w-16 h-16 rounded-2xl overflow-hidden"
           >
             {user.avatarUrl ? (
               <img
@@ -100,19 +103,14 @@ export default function PerfilPage() {
                 {getInitials(user.username)}
               </div>
             )}
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+            {/* Overlay — always visible on mobile (no hover) */}
+            <div className="absolute inset-0 bg-black/35 flex items-center justify-center">
               {uploading
                 ? <Loader2 size={16} className="text-white animate-spin" />
-                : <Camera size={16} className="text-white" />
+                : <Camera size={15} className="text-white/80" />
               }
             </div>
           </button>
-          {uploading && (
-            <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center">
-              <Loader2 size={16} className="text-white animate-spin" />
-            </div>
-          )}
           {/* Hidden file input */}
           <input
             ref={fileInputRef}
@@ -128,7 +126,10 @@ export default function PerfilPage() {
           <p className="text-white/30 text-xs mt-0.5">
             Membro desde {new Date(user.createdAt).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
           </p>
-          <p className="text-white/20 text-[10px] mt-1">Toca no avatar para mudar a foto</p>
+          {uploadError
+            ? <p className="text-red-400 text-[10px] mt-1">Erro ao fazer upload. Verifica as regras do Storage.</p>
+            : <p className="text-white/20 text-[10px] mt-1">Toca no avatar para mudar a foto</p>
+          }
         </div>
       </motion.div>
 
