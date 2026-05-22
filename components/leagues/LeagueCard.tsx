@@ -55,9 +55,6 @@ const VISUALS: Record<string, {
 export default function LeagueCard({ league, memberCount, isJoined, index }: LeagueCardProps) {
   const v = VISUALS[league.id] || VISUALS['fase-grupos'];
   const prizes = league.prizeDistribution;
-  const prizeText = prizes.second
-    ? `${prizes.first} / ${prizes.second} / ${prizes.third}%`
-    : `100% vencedor`;
 
   return (
     <motion.div
@@ -92,29 +89,21 @@ export default function LeagueCard({ league, memberCount, isJoined, index }: Lea
           />
 
           <div className="relative p-5">
-            {/* Top row */}
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <span
-                  className="text-[10px] font-semibold uppercase tracking-[0.12em] px-2 py-0.5 rounded-full border"
-                  style={{ color: v.accent, borderColor: `${v.accent}40`, backgroundColor: `${v.accent}12` }}
-                >
-                  {v.label}
-                </span>
+            {/* Name row */}
+            <div className="flex items-center justify-between mb-0.5">
+              <div className="flex items-center gap-2 flex-1 min-w-0 mr-2">
+                <h3 className="text-white font-bold text-base tracking-tight leading-snug truncate">
+                  {league.name}
+                </h3>
                 {isJoined && (
-                  <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
-                    <Check size={9} strokeWidth={2.5} />
+                  <span className="flex items-center gap-1 text-[9px] font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5 flex-shrink-0">
+                    <Check size={8} strokeWidth={2.5} />
                     inscrito
                   </span>
                 )}
               </div>
-              <ChevronRight size={16} className="text-white/20 mt-0.5" />
+              <ChevronRight size={16} className="text-white/20 flex-shrink-0" />
             </div>
-
-            {/* Name */}
-            <h3 className="text-white font-bold text-base tracking-tight leading-snug mb-0.5">
-              {league.name}
-            </h3>
             <p className="text-white/40 text-xs font-medium mb-4">{league.subtitle}</p>
 
             {/* Bottom stats row */}
@@ -125,7 +114,17 @@ export default function LeagueCard({ league, memberCount, isJoined, index }: Lea
               </div>
 
               <div className="flex items-center gap-4">
-                <span className="text-white/25 text-[11px]">{prizeText}</span>
+                {prizes.second ? (
+                  <span className="text-[11px] flex items-center gap-0.5">
+                    <span style={{ color: '#FFD700' }} className="font-semibold">{prizes.first}%</span>
+                    <span className="text-white/20 mx-0.5">/</span>
+                    <span style={{ color: '#C0C0C0' }} className="font-semibold">{prizes.second}%</span>
+                    <span className="text-white/20 mx-0.5">/</span>
+                    <span style={{ color: '#CD7F32' }} className="font-semibold">{prizes.third}%</span>
+                  </span>
+                ) : (
+                  <span className="text-white/25 text-[11px]">100% vencedor</span>
+                )}
                 <div
                   className="text-xs font-bold px-2.5 py-1 rounded-xl"
                   style={{ color: v.accent, backgroundColor: `${v.accent}15` }}

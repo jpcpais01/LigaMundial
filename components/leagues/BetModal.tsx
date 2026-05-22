@@ -169,7 +169,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                         value={exactHome}
                         onChange={e => setExactHome(e.target.value)}
                         placeholder="–"
-                        className="flex-1 bg-white/4 border border-white/8 rounded-2xl text-center text-white
+                        className="flex-1 bg-[#161b27] border border-white/8 rounded-2xl text-center text-white
                                    text-2xl font-bold py-3.5 focus:outline-none focus:border-white/20 transition-all
                                    [appearance:textfield]"
                       />
@@ -179,7 +179,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                         value={exactAway}
                         onChange={e => setExactAway(e.target.value)}
                         placeholder="–"
-                        className="flex-1 bg-white/4 border border-white/8 rounded-2xl text-center text-white
+                        className="flex-1 bg-[#161b27] border border-white/8 rounded-2xl text-center text-white
                                    text-2xl font-bold py-3.5 focus:outline-none focus:border-white/20 transition-all
                                    [appearance:textfield]"
                       />

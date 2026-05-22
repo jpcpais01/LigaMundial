@@ -14,6 +14,25 @@
 * {
   -webkit-tap-highlight-color: transparent;
   box-sizing: border-box;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+input, textarea, [contenteditable] {
+  user-select: text;
+  -webkit-user-select: text;
+  -webkit-text-fill-color: white;
+  color: white;
+}
+
+/* Browser autofill — keep dark background */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: white !important;
+  -webkit-box-shadow: 0 0 0 1000px #161b27 inset !important;
+  caret-color: white;
 }
 
 html {

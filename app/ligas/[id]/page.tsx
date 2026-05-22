@@ -26,7 +26,7 @@ const ACCENT: Record<string, string> = {
 export default function LeaguePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const league = getLeague(id);
-  const { user, setShowAuthModal } = useAuthContext();
+  const { user, setShowAuthModal, updateUser } = useAuthContext();
 
   const [tab, setTab] = useState<Tab>('jogos');
   const [joined, setJoined] = useState(false);
@@ -85,6 +85,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       setJoined(false);
       setMemberCount(c => Math.max(0, c - 1));
       setShowLeaveConfirm(false);
+      updateUser({ joinedLeagues: (user.joinedLeagues || []).filter(id => id !== league.id) });
     } finally {
       setLeaving(false);
     }
@@ -97,6 +98,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       await joinLeague(league.id, user.username);
       setJoined(true);
       setMemberCount(c => c + 1);
+      updateUser({ joinedLeagues: [...(user.joinedLeagues || []), league.id] });
     } finally {
       setJoining(false);
     }

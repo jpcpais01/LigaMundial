@@ -5,43 +5,48 @@ import { ArrowUpRight } from 'lucide-react';
 const NEWS = [
   {
     id: 1,
-    title: 'MetLife Stadium recebe a Grande Final',
-    summary: 'Nova Iorque acolhe o jogo mais esperado do século. Capacidade de 82.500 adeptos.',
-    date: '20 Mai 2026',
-    tag: 'Infraestrutura',
-    accent: '#3b82f6',
+    title: 'Mbappé: "O Mundial é a minha prioridade absoluta"',
+    summary: 'O avançado francês chega a 2026 como grande favorito individual. A França é uma das candidatas ao título.',
+    date: '21 Mai 2026',
+    tag: 'Estrelas',
+    accent: '#fbbf24',
+    url: 'https://www.fifa.com/en/tournaments/mens/worldcup/2026worldcup',
   },
   {
     id: 2,
-    title: 'Messi e Ronaldo: o último capítulo',
-    summary: 'Argentina e Portugal poderão cruzar-se nos quartos de final.',
-    date: '19 Mai 2026',
-    tag: 'Estrelas',
-    accent: '#fbbf24',
+    title: 'Argentina quer o tri: a defesa do título começa agora',
+    summary: 'Os campeões de 2022 chegam confiantes sob o comando de Scaloni. Messi lidera a albiceleste pela última vez.',
+    date: '20 Mai 2026',
+    tag: 'Seleções',
+    accent: '#a78bfa',
+    url: 'https://www.fifa.com/en/tournaments/mens/worldcup/2026worldcup',
   },
   {
     id: 3,
-    title: 'Brasil termina preparação com vitória',
-    summary: 'A canarinha venceu o Chile na derradeira partida de preparação. Vinicius em destaque.',
+    title: 'MetLife Stadium recebe a Grande Final a 26 de Julho',
+    summary: 'Nova Iorque acolhe o jogo mais esperado do século. O estádio tem capacidade para 82.500 adeptos.',
     date: '18 Mai 2026',
-    tag: 'Seleções',
-    accent: '#34d399',
+    tag: 'Infraestrutura',
+    accent: '#3b82f6',
+    url: 'https://www.fifa.com/en/tournaments/mens/worldcup/2026worldcup',
   },
   {
     id: 4,
-    title: 'Calendário completo do Mundial',
-    summary: '104 jogos em 16 cidades dos EUA, México e Canadá. Grupos a 11 de Junho.',
+    title: 'Vinicius Jr.: a esperança do Brasil para acabar com o jejum',
+    summary: 'O extremo do Real Madrid lidera a geração canarinha que quer o título 24 anos depois de 2002.',
     date: '17 Mai 2026',
-    tag: 'Organização',
-    accent: '#a78bfa',
+    tag: 'Seleções',
+    accent: '#34d399',
+    url: 'https://www.fifa.com/en/tournaments/mens/worldcup/2026worldcup',
   },
   {
     id: 5,
-    title: 'Portugal parte como favorito',
-    summary: 'A seleção nacional é apontada como uma das principais candidatas ao título.',
-    date: '16 Mai 2026',
-    tag: 'Portugal',
+    title: '48 seleções, 3 países, 104 jogos: o maior Mundial de sempre',
+    summary: 'EUA, México e Canadá acolhem pela primeira vez 48 equipas. Os grupos arrancam a 11 de Junho no Azteca.',
+    date: '15 Mai 2026',
+    tag: 'Organização',
     accent: '#fb7185',
+    url: 'https://www.fifa.com/en/tournaments/mens/worldcup/2026worldcup',
   },
 ];
 
@@ -57,12 +62,15 @@ export default function NewsSection() {
 
       <div className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory scrollbar-none">
         {NEWS.map((item, i) => (
-          <motion.div
+          <motion.a
             key={item.id}
+            href={item.url}
+            target="_blank"
+            rel="noopener noreferrer"
             initial={{ opacity: 0, x: 16 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.06 * i, duration: 0.35 }}
-            className="flex-shrink-0 w-60 snap-start rounded-2xl border border-white/6 bg-white/3 p-4 cursor-pointer active:scale-[0.97] transition-transform"
+            className="flex-shrink-0 w-60 snap-start rounded-2xl border border-white/6 bg-white/3 p-4 cursor-pointer active:scale-[0.97] transition-transform block"
           >
             <div className="flex items-start justify-between mb-3">
               <span
@@ -75,7 +83,7 @@ export default function NewsSection() {
               >
                 {item.tag}
               </span>
-              <ArrowUpRight size={13} className="text-white/15 mt-0.5" />
+              <ArrowUpRight size={13} className="text-white/15 mt-0.5 flex-shrink-0" />
             </div>
 
             <h3 className="text-white font-semibold text-sm leading-snug mb-1.5 line-clamp-2">
@@ -85,7 +93,7 @@ export default function NewsSection() {
               {item.summary}
             </p>
             <p className="text-white/20 text-[10px]">{item.date}</p>
-          </motion.div>
+          </motion.a>
         ))}
       </div>
     </section>

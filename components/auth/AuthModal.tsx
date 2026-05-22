@@ -74,7 +74,7 @@ export default function AuthModal() {
                     value={username}
                     onChange={e => { setUsername(e.target.value); setError(''); }}
                     placeholder="nome_utilizador"
-                    className="w-full bg-white/4 border border-white/8 rounded-2xl pl-10 pr-4 py-3.5
+                    className="w-full bg-[#161b27] border border-white/8 rounded-2xl pl-10 pr-4 py-3.5
                                text-white placeholder:text-white/20 focus:outline-none focus:border-white/20
                                transition-all text-sm"
                     autoFocus
