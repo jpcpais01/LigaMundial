@@ -1,13 +1,42 @@
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ShieldCheck, Lock, Loader2, Check, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Lock, Loader2, Check, Image as ImageIcon, X } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { ALL_MATCHES } from '@/data/matches';
 import { getTeam } from '@/data/teams';
-import { setMatchResult } from '@/lib/firestore';
+import { setMatchResult, setLeagueBackground } from '@/lib/firestore';
+import { LEAGUES } from '@/data/leagues';
 import { formatMatchDate } from '@/lib/utils';
 import type { Match } from '@/types';
+
+async function compressLeagueBg(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const TARGET_W = 900;
+      const TARGET_H = 500;
+      const srcRatio = img.width / img.height;
+      const tgtRatio = TARGET_W / TARGET_H;
+      let sx = 0, sy = 0, sw = img.width, sh = img.height;
+      if (srcRatio > tgtRatio) {
+        sw = img.height * tgtRatio;
+        sx = (img.width - sw) / 2;
+      } else {
+        sh = img.width / tgtRatio;
+        sy = (img.height - sh) / 2;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = TARGET_W;
+      canvas.height = TARGET_H;
+      const ctx = canvas.getContext('2d')!;
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, TARGET_W, TARGET_H);
+      resolve(canvas.toDataURL('image/jpeg', 0.78));
+    };
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuthContext();
@@ -17,6 +46,14 @@ export default function AdminPage() {
   const [awayScore, setAwayScore] = useState('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+
+  // League background section
+  const [bgLeagueId, setBgLeagueId] = useState(LEAGUES[0].id);
+  const [bgPreview, setBgPreview] = useState<string | null>(null);
+  const [bgSaving, setBgSaving] = useState(false);
+  const [bgSaved, setBgSaved] = useState(false);
+  const [bgError, setBgError] = useState('');
+  const bgInputRef = useRef<HTMLInputElement>(null);
 
   if (!user || !isAdmin) {
     return (
@@ -36,6 +73,35 @@ export default function AdminPage() {
     return !q || h.name.toLowerCase().includes(q) || a.name.toLowerCase().includes(q) ||
       h.shortName.toLowerCase().includes(q) || a.shortName.toLowerCase().includes(q);
   }).slice(0, 30);
+
+  const handleBgFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const compressed = await compressLeagueBg(file);
+      setBgPreview(compressed);
+      setBgError('');
+    } catch {
+      setBgError('Erro ao processar imagem.');
+    }
+    e.target.value = '';
+  };
+
+  const handleBgSave = async () => {
+    if (!bgPreview) return;
+    setBgSaving(true);
+    setBgError('');
+    try {
+      await setLeagueBackground(bgLeagueId, bgPreview);
+      setBgSaved(true);
+      setTimeout(() => setBgSaved(false), 2500);
+    } catch (err) {
+      setBgError('Erro ao guardar. Tenta novamente.');
+      console.error(err);
+    } finally {
+      setBgSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!selected) return;
@@ -101,6 +167,91 @@ export default function AdminPage() {
             </button>
           );
         })}
+      </div>
+
+      {/* ── League background upload ─────────────────── */}
+      <div className="border-t border-white/8 pt-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <ImageIcon size={16} className="text-gold" />
+          <h2 className="text-sm font-bold text-white">Background das Ligas</h2>
+        </div>
+
+        {/* League selector */}
+        <div className="flex gap-1.5 flex-wrap mb-4">
+          {LEAGUES.map(l => (
+            <button
+              key={l.id}
+              onClick={() => { setBgLeagueId(l.id); setBgPreview(null); setBgSaved(false); setBgError(''); }}
+              className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                bgLeagueId === l.id
+                  ? 'bg-gold/15 border-gold/30 text-gold font-semibold'
+                  : 'bg-white/4 border-white/8 text-white/50'
+              }`}
+            >
+              {l.name.replace('Liga ', '').replace('Extra — ', '')}
+            </button>
+          ))}
+        </div>
+
+        {/* Upload area */}
+        <input
+          ref={bgInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleBgFile}
+        />
+
+        {bgPreview ? (
+          <div className="relative rounded-2xl overflow-hidden mb-3 border border-white/10" style={{ aspectRatio: '9/5' }}>
+            <img src={bgPreview} alt="preview" className="w-full h-full object-cover" />
+            <button
+              onClick={() => setBgPreview(null)}
+              className="absolute top-2 right-2 bg-black/50 rounded-full p-1"
+            >
+              <X size={14} className="text-white" />
+            </button>
+            <div className="absolute bottom-2 left-2 bg-black/50 rounded-lg px-2 py-1 text-[10px] text-white/70">
+              {LEAGUES.find(l => l.id === bgLeagueId)?.name}
+            </div>
+          </div>
+        ) : (
+          <button
+            onClick={() => bgInputRef.current?.click()}
+            className="w-full rounded-2xl border border-dashed border-white/15 bg-white/3 flex flex-col items-center justify-center gap-2 py-8 mb-3 active:bg-white/5 transition-colors"
+          >
+            <ImageIcon size={24} className="text-white/20" />
+            <p className="text-white/35 text-xs">Toca para seleccionar imagem</p>
+            <p className="text-white/20 text-[10px]">JPG / PNG · recomendado 16:9</p>
+          </button>
+        )}
+
+        {bgError && <p className="text-red-400 text-xs mb-3">{bgError}</p>}
+
+        <div className="flex gap-2">
+          {bgPreview && (
+            <button
+              onClick={() => bgInputRef.current?.click()}
+              className="flex-1 py-3 rounded-2xl border border-white/10 bg-white/4 text-white/50 text-sm font-medium"
+            >
+              Trocar
+            </button>
+          )}
+          <motion.button
+            onClick={handleBgSave}
+            disabled={!bgPreview || bgSaving}
+            whileTap={{ scale: 0.97 }}
+            className={`flex-1 py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+              bgSaved
+                ? 'bg-green-500/20 text-green-400 border border-green-500/30'
+                : 'bg-gold-gradient text-black disabled:opacity-30'
+            }`}
+          >
+            {bgSaved ? <><Check size={16} /> Guardado!</>
+              : bgSaving ? <><Loader2 size={16} className="animate-spin" /> A guardar...</>
+              : '💾 Guardar background'}
+          </motion.button>
+        </div>
       </div>
 
       {/* Result input */}
