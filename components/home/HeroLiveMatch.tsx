@@ -74,14 +74,68 @@ export default function HeroLiveMatch() {
     >
       <div
         className="relative rounded-2xl overflow-hidden border border-white/6 p-5"
-        style={{ background: 'linear-gradient(135deg, #0f1e3e 0%, #080d1e 100%)' }}
+        style={{ background: '#080d1e' }}
       >
-        {/* Subtle grid pattern */}
+        {/* Home flag — left half, clipped diagonally */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ clipPath: 'polygon(0 0, 58% 0, 42% 100%, 0 100%)' }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              fontSize: 160,
+              top: '50%',
+              left: '-8%',
+              transform: 'translateY(-50%)',
+              opacity: 0.22,
+              filter: 'blur(10px)',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}
+          >
+            {home.flag}
+          </span>
+        </div>
+
+        {/* Away flag — right half, clipped diagonally */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ clipPath: 'polygon(58% 0, 100% 0, 100% 100%, 42% 100%)' }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              fontSize: 160,
+              top: '50%',
+              right: '-8%',
+              transform: 'translateY(-50%)',
+              opacity: 0.22,
+              filter: 'blur(10px)',
+              lineHeight: 1,
+              userSelect: 'none',
+            }}
+          >
+            {away.flag}
+          </span>
+        </div>
+
+        {/* Diagonal divider line */}
+        <div
+          className="absolute inset-y-0 pointer-events-none"
+          style={{
+            left: 'calc(50% - 0.5px)',
+            width: '1px',
+            background: 'rgba(255,255,255,0.07)',
+            transform: 'skewX(-10deg)',
+          }}
+        />
+
+        {/* Dark vignette — keeps text readable */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(255,255,255,0.025) 31px, rgba(255,255,255,0.025) 32px),
-                              repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(255,255,255,0.025) 31px, rgba(255,255,255,0.025) 32px)`,
+            background: 'radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(8,13,30,0.75) 100%)',
           }}
         />
 
