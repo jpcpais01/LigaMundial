@@ -1,14 +1,13 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { LogIn, Info } from 'lucide-react';
 import { LEAGUES } from '@/data/leagues';
 import LeagueCard from '@/components/leagues/LeagueCard';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { getLeagueMembers } from '@/lib/firestore';
 
 export default function LigasPage() {
-  const { user, setShowAuthModal } = useAuthContext();
+  const { user } = useAuthContext();
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
@@ -30,48 +29,16 @@ export default function LigasPage() {
 
   return (
     <div className="min-h-dvh">
-      {/* Header */}
-      <header className="px-4 pt-12 pb-5">
-        <h1 className="text-2xl font-black text-white">Ligas 🏆</h1>
-        <p className="text-white/40 text-sm mt-1">Escolhe uma liga para apostar</p>
+      <header className="px-4 pt-14 pb-6">
+        <h1 className="text-2xl font-black tracking-tight text-white">Ligas</h1>
+        <p className="text-white/35 text-sm mt-1">Escolhe uma liga para apostar</p>
       </header>
 
-      {/* Not logged in banner */}
-      {!user && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="mx-4 mb-5 bg-gold/8 border border-gold/15 rounded-2xl p-4 flex items-center gap-3"
-        >
-          <Info size={16} className="text-gold flex-shrink-0" />
-          <p className="text-white/60 text-xs flex-1">
-            Entra na tua conta para te inscrever e apostar nas ligas.
-          </p>
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="bg-gold-gradient text-black text-xs font-bold px-3 py-2 rounded-xl flex-shrink-0 flex items-center gap-1"
-          >
-            <LogIn size={12} /> Entrar
-          </button>
-        </motion.div>
-      )}
-
-      {/* Prize pool info */}
-      <div className="mx-4 mb-5 bg-white/3 border border-white/8 rounded-2xl p-4">
-        <p className="text-white/40 text-xs mb-2 font-medium uppercase tracking-wider">Como funciona</p>
-        <div className="space-y-1.5">
-          <p className="text-white/60 text-xs">💰 <span className="text-white/80">10€</span> de entrada por liga</p>
-          <p className="text-white/60 text-xs">🎯 Resultado exacto: <span className="text-gold font-bold">3 pontos</span></p>
-          <p className="text-white/60 text-xs">✅ 1X2 correcto: <span className="text-gold font-bold">1 ponto</span></p>
-          <p className="text-white/60 text-xs">🏆 Prémio: 60% / 30% / 10% do poço</p>
-        </div>
-      </div>
-
       {/* General leagues */}
-      <section className="px-4 mb-6">
-        <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-3">
+      <section className="px-4 mb-7">
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
           Ligas Gerais
-        </h2>
+        </p>
         <div className="space-y-3">
           {generalLeagues.map((l, i) => (
             <LeagueCard
@@ -87,9 +54,9 @@ export default function LigasPage() {
 
       {/* Extra leagues */}
       <section className="px-4 mb-6">
-        <h2 className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-3">
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
           Ligas Extra
-        </h2>
+        </p>
         <div className="space-y-3">
           {extraLeagues.map((l, i) => (
             <LeagueCard

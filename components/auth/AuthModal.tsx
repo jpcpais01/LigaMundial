@@ -27,7 +27,8 @@ export default function AuthModal() {
       const user = await getOrCreateUser(trimmed);
       login(user);
       setShowAuthModal(false);
-    } catch (err) {
+      setUsername('');
+    } catch {
       setError('Erro de ligação. Tenta novamente.');
     } finally {
       setLoading(false);
@@ -38,49 +39,44 @@ export default function AuthModal() {
     <AnimatePresence>
       {showAuthModal && (
         <>
-          {/* Overlay */}
           <motion.div
             className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             onClick={() => setShowAuthModal(false)}
           />
-
-          {/* Modal */}
           <motion.div
             className="fixed inset-x-4 bottom-8 z-50 sm:inset-auto sm:left-1/2 sm:top-1/2 sm:w-96 sm:-translate-x-1/2 sm:-translate-y-1/2"
-            initial={{ y: 80, opacity: 0, scale: 0.95 }}
-            animate={{ y: 0, opacity: 1, scale: 1 }}
-            exit={{ y: 80, opacity: 0, scale: 0.95 }}
-            transition={{ type: 'spring', damping: 25 }}
+            initial={{ y: 60, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 60, opacity: 0 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
           >
-            <div className="glass-card rounded-3xl p-6 border border-white/10">
+            <div className="bg-[#0d1117] rounded-3xl p-6 border border-white/8">
               {/* Header */}
-              <div className="flex items-center justify-between mb-6">
+              <div className="flex items-start justify-between mb-8">
                 <div>
-                  <h2 className="text-xl font-bold text-white">Entrar na Liga</h2>
-                  <p className="text-sm text-white/50 mt-0.5">Escolhe o teu nome de utilizador</p>
+                  <h2 className="text-xl font-bold tracking-tight text-white">Entrar na Liga</h2>
+                  <p className="text-white/35 text-sm mt-1">Escolhe o teu nome de utilizador</p>
                 </div>
-                <button onClick={() => setShowAuthModal(false)} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
-                  <X size={18} className="text-white/60" />
+                <button
+                  onClick={() => setShowAuthModal(false)}
+                  className="p-2 rounded-xl hover:bg-white/8 transition-colors"
+                >
+                  <X size={16} className="text-white/35" />
                 </button>
               </div>
 
-              {/* Ball emoji */}
-              <div className="text-center mb-6">
-                <span className="text-5xl">⚽</span>
-              </div>
-
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 <div className="relative">
-                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" />
+                  <User size={14} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/25" />
                   <input
                     type="text"
                     value={username}
                     onChange={e => { setUsername(e.target.value); setError(''); }}
                     placeholder="nome_utilizador"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl pl-10 pr-4 py-3.5
-                               text-white placeholder:text-white/25 focus:outline-none focus:border-gold/50
-                               focus:bg-white/8 transition-all text-sm"
+                    className="w-full bg-white/4 border border-white/8 rounded-2xl pl-10 pr-4 py-3.5
+                               text-white placeholder:text-white/20 focus:outline-none focus:border-white/20
+                               transition-all text-sm"
                     autoFocus
                     disabled={loading}
                     maxLength={20}
@@ -89,26 +85,30 @@ export default function AuthModal() {
 
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                    className="flex items-center gap-2 text-red-400 text-sm bg-red-500/10 rounded-xl px-3 py-2.5"
+                    initial={{ opacity: 0, y: -4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="flex items-center gap-2 text-red-400/80 text-xs bg-red-500/8 rounded-xl px-3 py-2.5 border border-red-500/15"
                   >
-                    <AlertCircle size={14} /> {error}
+                    <AlertCircle size={13} />
+                    {error}
                   </motion.div>
                 )}
 
-                <p className="text-xs text-white/35 text-center px-2">
-                  Se já tens conta, o teu nome irá recuperar os teus dados. Caso contrário, será criada uma conta nova.
+                <p className="text-white/25 text-xs text-center px-2 leading-relaxed">
+                  Nome existente recupera os teus dados. Nome novo cria conta automaticamente.
                 </p>
 
                 <motion.button
                   type="submit"
                   disabled={loading || !username.trim()}
                   className="w-full py-3.5 rounded-2xl font-semibold text-sm text-black
-                             bg-gold-gradient disabled:opacity-40 disabled:cursor-not-allowed
-                             flex items-center justify-center gap-2 transition-opacity"
+                             bg-gold-gradient disabled:opacity-35 flex items-center justify-center gap-2"
                   whileTap={{ scale: 0.97 }}
                 >
-                  {loading ? <><Loader2 size={16} className="animate-spin" /> A entrar...</> : '🏆 Entrar'}
+                  {loading
+                    ? <><Loader2 size={15} className="animate-spin" /> A entrar...</>
+                    : 'Continuar'
+                  }
                 </motion.button>
               </form>
             </div>

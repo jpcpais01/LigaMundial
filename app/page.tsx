@@ -1,96 +1,54 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Bell, LogIn, LogOut } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import HeroLiveMatch from '@/components/home/HeroLiveMatch';
 import NewsSection from '@/components/home/NewsSection';
 import { getInitials } from '@/lib/utils';
 
 export default function HomePage() {
-  const { user, loading, logout, setShowAuthModal } = useAuthContext();
+  const { user, loading, setShowAuthModal } = useAuthContext();
 
   return (
     <div className="min-h-dvh">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 pt-12 pb-4">
+      <header className="flex items-center justify-between px-4 pt-14 pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">⚽</span>
-            <h1 className="text-xl font-black text-gold-gradient">LigaMundial</h1>
-          </div>
-          <p className="text-white/30 text-xs mt-0.5">FIFA World Cup 2026</p>
+          <h1 className="text-2xl font-black tracking-tight text-white">LigaMundial</h1>
+          <p className="text-white/30 text-xs mt-0.5 font-medium tracking-wide">FIFA World Cup 2026</p>
         </div>
 
-        <div className="flex items-center gap-2">
-          {!loading && (
-            <>
-              {user ? (
-                <div className="flex items-center gap-2">
-                  <div
-                    className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold cursor-pointer"
-                    style={{ backgroundColor: user.avatarColor }}
-                    onClick={() => {/* navigate to profile */}}
-                  >
-                    {getInitials(user.username)}
-                  </div>
-                </div>
-              ) : (
-                <motion.button
-                  onClick={() => setShowAuthModal(true)}
-                  className="flex items-center gap-1.5 bg-gold/15 border border-gold/25 text-gold
-                             text-xs font-semibold px-3 py-2 rounded-xl"
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <LogIn size={13} />
-                  Entrar
-                </motion.button>
-              )}
-            </>
-          )}
-        </div>
+        {!loading && (
+          user ? (
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white cursor-pointer"
+              style={{ backgroundColor: user.avatarColor }}
+            >
+              {getInitials(user.username)}
+            </div>
+          ) : (
+            <motion.button
+              onClick={() => setShowAuthModal(true)}
+              className="flex items-center gap-1.5 border border-white/15 text-white/70
+                         text-xs font-medium px-3.5 py-2 rounded-xl bg-white/4 hover:bg-white/8 transition-colors"
+              whileTap={{ scale: 0.95 }}
+            >
+              <LogIn size={13} />
+              Entrar
+            </motion.button>
+          )
+        )}
       </header>
-
-      {/* Welcome if not logged in */}
-      {!loading && !user && (
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mx-4 mb-4 bg-gradient-to-r from-gold/10 to-yellow-800/10 border border-gold/15
-                     rounded-2xl p-4 flex items-center justify-between gap-3"
-        >
-          <div>
-            <p className="text-gold text-sm font-bold">Bem-vindo ao LigaMundial! 🏆</p>
-            <p className="text-white/40 text-xs mt-0.5">Entra para apostar e competir.</p>
-          </div>
-          <button
-            onClick={() => setShowAuthModal(true)}
-            className="bg-gold-gradient text-black text-xs font-bold px-3 py-2 rounded-xl flex-shrink-0"
-          >
-            Entrar
-          </button>
-        </motion.div>
-      )}
-
-      {/* Welcome back */}
-      {!loading && user && (
-        <motion.div
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="px-4 mb-4"
-        >
-          <p className="text-white/60 text-sm">
-            Olá, <span className="text-white font-semibold">{user.username}</span> 👋
-          </p>
-        </motion.div>
-      )}
 
       {/* Tournament countdown */}
       <TournamentBanner />
 
-      {/* Live / Next match hero */}
-      <section className="mt-4">
-        <div className="flex items-center justify-between px-4 mb-3">
-          <h2 className="text-sm font-bold text-white/80">Jogo em Destaque</h2>
+      {/* Live / Next match */}
+      <section className="mt-3">
+        <div className="px-4 mb-3">
+          <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
+            Jogo em Destaque
+          </p>
         </div>
         <HeroLiveMatch />
       </section>
@@ -111,21 +69,32 @@ function TournamentBanner() {
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.97 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: 0.2 }}
-      className="mx-4 mb-2 relative rounded-2xl overflow-hidden border border-white/8"
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.15, duration: 0.4 }}
+      className="mx-4 mb-2"
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-indigo-900/50 via-blue-900/40 to-purple-900/50" />
-      <div className="relative flex items-center justify-between p-4">
-        <div>
-          <p className="text-white/50 text-[10px] font-medium uppercase tracking-wider">Mundial 2026</p>
-          <p className="text-white font-bold text-sm mt-0.5">Arranca em <span className="text-gold">{diffDays} dias</span></p>
-          <p className="text-white/35 text-xs">11 Jun • Estadio Azteca</p>
+      <div
+        className="relative rounded-2xl overflow-hidden border border-white/6 px-5 py-4 flex items-center justify-between"
+        style={{ background: 'linear-gradient(135deg, #0c1a3a 0%, #050714 100%)' }}
+      >
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 21px)`,
+          }}
+        />
+        <div className="relative">
+          <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/25 mb-0.5">
+            Início do Torneio
+          </p>
+          <p className="text-white font-semibold text-sm">11 Jun · Estadio Azteca</p>
         </div>
-        <div className="text-right">
-          <span className="text-5xl font-black text-gold-gradient">{diffDays}</span>
-          <p className="text-white/30 text-[10px]">dias</p>
+        <div className="relative text-right">
+          <p className="text-4xl font-black tracking-tight" style={{ color: '#fbbf24' }}>
+            {diffDays}
+          </p>
+          <p className="text-white/25 text-[10px] font-medium uppercase tracking-wider">dias</p>
         </div>
       </div>
     </motion.div>

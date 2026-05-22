@@ -1,6 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
-import { Users, ChevronRight, Check } from 'lucide-react';
+import { ChevronRight, Users, Check } from 'lucide-react';
 import Link from 'next/link';
 import type { League } from '@/types';
 
@@ -11,62 +11,128 @@ interface LeagueCardProps {
   index: number;
 }
 
+// Visual identity per league
+const VISUALS: Record<string, {
+  bg: string;
+  accent: string;
+  label: string;
+  pattern: string;
+}> = {
+  'fase-grupos': {
+    bg: 'linear-gradient(135deg, #0c1a3a 0%, #0a1020 100%)',
+    accent: '#3b82f6',
+    label: 'Geral',
+    pattern: `repeating-linear-gradient(0deg, transparent, transparent 31px, rgba(255,255,255,0.03) 31px, rgba(255,255,255,0.03) 32px),
+              repeating-linear-gradient(90deg, transparent, transparent 31px, rgba(255,255,255,0.03) 31px, rgba(255,255,255,0.03) 32px)`,
+  },
+  'fase-copa': {
+    bg: 'linear-gradient(135deg, #1a0c3a 0%, #100a20 100%)',
+    accent: '#a78bfa',
+    label: 'Geral',
+    pattern: `repeating-linear-gradient(-45deg, transparent, transparent 14px, rgba(255,255,255,0.025) 14px, rgba(255,255,255,0.025) 15px)`,
+  },
+  'extra-jornadas': {
+    bg: 'linear-gradient(135deg, #0c2e1a 0%, #081a0e 100%)',
+    accent: '#34d399',
+    label: 'Extra',
+    pattern: `radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1px)`,
+  },
+  'extra-campeao': {
+    bg: 'linear-gradient(135deg, #2e1e06 0%, #1a1004 100%)',
+    accent: '#fbbf24',
+    label: 'Extra',
+    pattern: `repeating-conic-gradient(rgba(251,191,36,0.04) 0deg 10deg, transparent 10deg 20deg)`,
+  },
+  'extra-marcador': {
+    bg: 'linear-gradient(135deg, #2e0c14 0%, #1a060c 100%)',
+    accent: '#fb7185',
+    label: 'Extra',
+    pattern: `repeating-linear-gradient(0deg, transparent, transparent 9px, rgba(255,255,255,0.03) 9px, rgba(255,255,255,0.03) 10px),
+              repeating-linear-gradient(90deg, transparent, transparent 9px, rgba(255,255,255,0.03) 9px, rgba(255,255,255,0.03) 10px)`,
+  },
+};
+
 export default function LeagueCard({ league, memberCount, isJoined, index }: LeagueCardProps) {
+  const v = VISUALS[league.id] || VISUALS['fase-grupos'];
   const prizes = league.prizeDistribution;
   const prizeText = prizes.second
-    ? `🥇 ${prizes.first}% · 🥈 ${prizes.second}% · 🥉 ${prizes.third}%`
-    : `🏆 100% vencedor`;
+    ? `${prizes.first} / ${prizes.second} / ${prizes.third}%`
+    : `100% vencedor`;
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08 }}
+      transition={{ delay: index * 0.07, duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
     >
       <Link href={`/ligas/${league.id}`}>
-        <div className={`relative rounded-2xl overflow-hidden border border-white/10
-                         bg-gradient-to-br from-white/8 to-white/2 backdrop-blur-md p-4
-                         active:scale-98 transition-transform`}>
-          {/* Gradient accent */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${league.color} opacity-10 pointer-events-none`} />
+        <div
+          className="relative rounded-2xl overflow-hidden border border-white/6 active:scale-[0.98] transition-transform duration-150"
+          style={{ background: v.bg }}
+        >
+          {/* Pattern overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              backgroundImage: v.pattern,
+              backgroundSize: league.id === 'extra-jornadas' ? '20px 20px' : undefined,
+            }}
+          />
 
-          <div className="relative flex items-start justify-between gap-3">
-            {/* Left: icon + info */}
-            <div className="flex items-start gap-3 flex-1 min-w-0">
-              <div className={`flex-shrink-0 w-12 h-12 rounded-2xl bg-gradient-to-br ${league.color}
-                              flex items-center justify-center text-2xl shadow-lg`}>
-                {league.icon}
+          {/* Top accent bar */}
+          <div
+            className="absolute top-0 inset-x-0 h-[2px]"
+            style={{ background: `linear-gradient(90deg, transparent, ${v.accent}80, transparent)` }}
+          />
+
+          {/* Right glow */}
+          <div
+            className="absolute right-0 top-0 bottom-0 w-32 pointer-events-none"
+            style={{ background: `linear-gradient(270deg, ${v.accent}10, transparent)` }}
+          />
+
+          <div className="relative p-5">
+            {/* Top row */}
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <span
+                  className="text-[10px] font-semibold uppercase tracking-[0.12em] px-2 py-0.5 rounded-full border"
+                  style={{ color: v.accent, borderColor: `${v.accent}40`, backgroundColor: `${v.accent}12` }}
+                >
+                  {v.label}
+                </span>
+                {isJoined && (
+                  <span className="flex items-center gap-1 text-[10px] font-medium text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded-full px-2 py-0.5">
+                    <Check size={9} strokeWidth={2.5} />
+                    inscrito
+                  </span>
+                )}
+              </div>
+              <ChevronRight size={16} className="text-white/20 mt-0.5" />
+            </div>
+
+            {/* Name */}
+            <h3 className="text-white font-bold text-base tracking-tight leading-snug mb-0.5">
+              {league.name}
+            </h3>
+            <p className="text-white/40 text-xs font-medium mb-4">{league.subtitle}</p>
+
+            {/* Bottom stats row */}
+            <div className="flex items-center justify-between pt-3.5 border-t border-white/5">
+              <div className="flex items-center gap-1.5 text-white/30 text-xs">
+                <Users size={11} />
+                <span>{memberCount} jogadores</span>
               </div>
 
-              <div className="min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="text-white font-bold text-sm leading-tight">{league.name}</h3>
-                  {isJoined && (
-                    <span className="flex items-center gap-0.5 text-[9px] bg-green-500/20 text-green-400
-                                   border border-green-500/30 rounded-full px-1.5 py-0.5 font-medium">
-                      <Check size={9} /> inscrito
-                    </span>
-                  )}
+              <div className="flex items-center gap-4">
+                <span className="text-white/25 text-[11px]">{prizeText}</span>
+                <div
+                  className="text-xs font-bold px-2.5 py-1 rounded-xl"
+                  style={{ color: v.accent, backgroundColor: `${v.accent}15` }}
+                >
+                  {league.entryFee}€
                 </div>
-                <p className="text-white/40 text-xs mt-0.5">{league.subtitle}</p>
-                <p className="text-white/60 text-xs mt-1.5 leading-relaxed line-clamp-2">
-                  {league.description}
-                </p>
               </div>
-            </div>
-
-            <ChevronRight size={18} className="text-white/30 flex-shrink-0 mt-1" />
-          </div>
-
-          {/* Footer */}
-          <div className="relative flex items-center justify-between mt-3 pt-3 border-t border-white/5">
-            <div className="flex items-center gap-1 text-white/40 text-xs">
-              <Users size={11} />
-              <span>{memberCount} jogadores</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-white/40">{prizeText}</span>
-              <span className="text-xs font-bold text-gold">{league.entryFee}€</span>
             </div>
           </div>
         </div>
