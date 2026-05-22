@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getUser } from '@/lib/firestore';
+import { getUser, getOrCreateUser } from '@/lib/firestore';
 import type { User } from '@/types';
 
 const LS_KEY = 'ligamundial_user';
@@ -40,6 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           if (fresh) {
             setUser(fresh);
             localStorage.setItem(LS_KEY, JSON.stringify(fresh));
+          } else {
+            // Doc apagado (ex: base de dados limpa) — recria preservando dados locais
+            const recreated = await getOrCreateUser(cached.username);
+            const merged: User = { ...recreated, avatarColor: cached.avatarColor, joinedLeagues: [] };
+            setUser(merged);
+            localStorage.setItem(LS_KEY, JSON.stringify(merged));
           }
           return;
         }

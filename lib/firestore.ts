@@ -132,7 +132,8 @@ export async function getAllSpecialBetsForLeague(leagueId: string): Promise<Spec
 
 // ─── UTILIZADORES (update) ───────────────────────────────────────────────────
 export async function updateUserDoc(username: string, data: Partial<import('@/types').User>): Promise<void> {
-  await updateDoc(doc(db, 'users', username), data as Record<string, unknown>);
+  // setDoc with merge:true creates the doc if missing, updates if it exists
+  await setDoc(doc(db, 'users', username), data as Record<string, unknown>, { merge: true });
 }
 
 export async function getUsersByUsernames(usernames: string[]): Promise<import('@/types').User[]> {
