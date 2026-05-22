@@ -21,8 +21,18 @@ export default function BottomNav() {
     : NAV_ITEMS;
 
   return (
-    <nav className="fixed bottom-0 inset-x-0 z-40 pb-safe">
-      <div className="mx-3 mb-3 glass-card rounded-2xl border border-white/10 px-2 py-1.5">
+    <nav className="fixed bottom-0 inset-x-0 z-40 pb-safe overflow-hidden">
+      {/* Full-width blur layer — blurs content behind the whole nav area */}
+      <div className="absolute inset-0 backdrop-blur-2xl" />
+      {/* Gradient fade: transparent at top → dark at bottom */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'linear-gradient(to bottom, transparent 0%, rgba(5,7,20,0.65) 35%, rgba(5,7,20,0.92) 100%)',
+        }}
+      />
+      {/* Pill card sits on top of the blurred area */}
+      <div className="relative mx-3 mb-3 bg-white/6 rounded-2xl border border-white/10 px-2 py-1.5">
         <div className="flex items-center justify-around">
           {items.map(item => {
             const active = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
@@ -55,4 +65,5 @@ export default function BottomNav() {
       </div>
     </nav>
   );
+
 }
