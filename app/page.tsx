@@ -1,23 +1,17 @@
 'use client';
-import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import HeroLiveMatch from '@/components/home/HeroLiveMatch';
 import NewsSection from '@/components/home/NewsSection';
+import UpcomingMatches from '@/components/home/UpcomingMatches';
 import { getInitials } from '@/lib/utils';
 
 export default function HomePage() {
   const { user, loading, setShowAuthModal } = useAuthContext();
 
-  // Prevent body scroll on homepage
-  useEffect(() => {
-    document.body.style.overflowY = 'hidden';
-    return () => { document.body.style.overflowY = ''; };
-  }, []);
-
   return (
-    <div>
+    <div className="pb-4">
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-6 pb-4">
         <div>
@@ -27,11 +21,17 @@ export default function HomePage() {
 
         {!loading && (
           user ? (
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-[13px] font-bold text-white cursor-pointer"
-              style={{ backgroundColor: user.avatarColor }}
-            >
-              {getInitials(user.username)}
+            <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 cursor-pointer">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+              ) : (
+                <div
+                  className="w-full h-full flex items-center justify-center text-[13px] font-bold text-white"
+                  style={{ backgroundColor: user.avatarColor }}
+                >
+                  {getInitials(user.username)}
+                </div>
+              )}
             </div>
           ) : (
             <motion.button
@@ -47,8 +47,8 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* Live / Next match */}
-      <section className="mt-3">
+      {/* Live / Next match hero */}
+      <section className="mt-1">
         <div className="px-4 mb-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
             Jogo em Destaque
@@ -57,9 +57,11 @@ export default function HomePage() {
         <HeroLiveMatch />
       </section>
 
+      {/* Next 10 matches */}
+      <UpcomingMatches />
+
       {/* News */}
       <NewsSection />
     </div>
   );
 }
-
