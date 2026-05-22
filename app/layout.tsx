@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: 'LigaMundial 2026',
   description: 'A tua liga privada de apostas do Mundial FIFA 2026',
   manifest: '/manifest.json',
-  icons: { icon: '/favicon.ico' },
+  // app/icon.tsx and app/apple-icon.tsx are picked up automatically by Next.js
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
