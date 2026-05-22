@@ -1,5 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getUser } from '@/lib/firestore';
 import type { User } from '@/types';
 
 const LS_KEY = 'ligamundial_user';
@@ -27,11 +28,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(LS_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch {}
-    setLoading(false);
+    async function init() {
+      try {
+        const stored = localStorage.getItem(LS_KEY);
+        if (stored) {
+          const cached = JSON.parse(stored) as User;
+          setUser(cached);       // mostra imediatamente sem flicker
+          setLoading(false);
+          // Atualiza silenciosamente a partir do Firestore
+          const fresh = await getUser(cached.username);
+          if (fresh) {
+            setUser(fresh);
+            localStorage.setItem(LS_KEY, JSON.stringify(fresh));
+          }
+          return;
+        }
+      } catch {}
+      setLoading(false);
+    }
+    init();
   }, []);
 
   const login = (u: User) => {
