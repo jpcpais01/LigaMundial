@@ -93,6 +93,7 @@ export interface LeaderboardEntry {
   rank: number;
   username: string;
   avatarColor: string;
+  avatarUrl?: string;
   points: number;
   exactScores: number;
   correctOutcomes: number;

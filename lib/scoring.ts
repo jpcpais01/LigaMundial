@@ -28,7 +28,7 @@ export function calculateBetPoints(bet: Bet, result: MatchResult): number {
 export function buildLeaderboard(
   bets: Bet[],
   results: Record<string, MatchResult>,
-  members: { username: string; avatarColor: string }[],
+  members: { username: string; avatarColor: string; avatarUrl?: string }[],
   totalPool: number,
   prizeDistribution: { first: number; second?: number; third?: number },
 ): LeaderboardEntry[] {
@@ -61,6 +61,7 @@ export function buildLeaderboard(
     rank: 0,
     username: m.username,
     avatarColor: m.avatarColor,
+    avatarUrl: m.avatarUrl,
     ...statsMap[m.username],
     prizeMoney: 0,
   }));

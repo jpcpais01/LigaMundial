@@ -35,7 +35,7 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
         const enriched = await Promise.all(
           members.map(async m => {
             const u = await getUser(m.username);
-            return { username: m.username, avatarColor: u?.avatarColor || '#6366f1' };
+            return { username: m.username, avatarColor: u?.avatarColor || '#6366f1', avatarUrl: u?.avatarUrl };
           })
         );
 
@@ -115,10 +115,12 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
 
               {/* Avatar */}
               <div
-                className="w-9 h-9 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                style={{ backgroundColor: entry.avatarColor }}
+                className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-white text-xs font-bold"
+                style={{ backgroundColor: entry.avatarUrl ? undefined : entry.avatarColor }}
               >
-                {getInitials(entry.username)}
+                {entry.avatarUrl
+                  ? <img src={entry.avatarUrl} alt={entry.username} className="w-full h-full object-cover" />
+                  : getInitials(entry.username)}
               </div>
 
               {/* Name + stats */}
@@ -166,10 +168,12 @@ function PodiumItem({
     <div className="flex flex-col items-center gap-1 flex-1">
       {crown && <Crown size={14} className="text-gold mb-0.5" />}
       <div
-        className="w-10 h-10 rounded-full flex items-center justify-center text-white text-xs font-bold"
-        style={{ backgroundColor: entry.avatarColor }}
+        className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center text-white text-xs font-bold"
+        style={{ backgroundColor: entry.avatarUrl ? undefined : entry.avatarColor }}
       >
-        {getInitials(entry.username)}
+        {entry.avatarUrl
+          ? <img src={entry.avatarUrl} alt={entry.username} className="w-full h-full object-cover" />
+          : getInitials(entry.username)}
       </div>
       <p className={`text-[9px] font-semibold truncate max-w-[60px] text-center ${isCurrent ? 'text-gold' : 'text-white/70'}`}>
         {entry.username}

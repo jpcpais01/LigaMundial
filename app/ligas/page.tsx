@@ -4,24 +4,27 @@ import { motion } from 'framer-motion';
 import { LEAGUES } from '@/data/leagues';
 import LeagueCard from '@/components/leagues/LeagueCard';
 import { useAuthContext } from '@/components/auth/AuthContext';
-import { getLeagueMembers } from '@/lib/firestore';
+import { getLeagueMembers, getAllLeagueConfigs } from '@/lib/firestore';
 
 export default function LigasPage() {
   const { user } = useAuthContext();
   const [memberCounts, setMemberCounts] = useState<Record<string, number>>({});
+  const [leagueConfigs, setLeagueConfigs] = useState<Record<string, { backgroundUrl?: string }>>({});
 
   useEffect(() => {
-    async function loadCounts() {
-      const counts: Record<string, number> = {};
-      await Promise.all(
-        LEAGUES.map(async l => {
-          const members = await getLeagueMembers(l.id);
-          counts[l.id] = members.length;
-        })
-      );
-      setMemberCounts(counts);
+    async function loadData() {
+      const [configs] = await Promise.all([
+        getAllLeagueConfigs(),
+        Promise.all(
+          LEAGUES.map(async l => {
+            const members = await getLeagueMembers(l.id);
+            setMemberCounts(prev => ({ ...prev, [l.id]: members.length }));
+          })
+        ),
+      ]);
+      setLeagueConfigs(configs);
     }
-    loadCounts();
+    loadData();
   }, []);
 
   const generalLeagues = LEAGUES.filter(l => l.id === 'fase-grupos' || l.id === 'fase-copa');
@@ -47,6 +50,7 @@ export default function LigasPage() {
               memberCount={memberCounts[l.id] || 0}
               isJoined={user?.joinedLeagues.includes(l.id) || false}
               index={i}
+              backgroundUrl={leagueConfigs[l.id]?.backgroundUrl}
             />
           ))}
         </div>
@@ -65,6 +69,7 @@ export default function LigasPage() {
               memberCount={memberCounts[l.id] || 0}
               isJoined={user?.joinedLeagues.includes(l.id) || false}
               index={i + 2}
+              backgroundUrl={leagueConfigs[l.id]?.backgroundUrl}
             />
           ))}
         </div>
