@@ -1,4 +1,5 @@
 'use client';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronRight, Users, Check } from 'lucide-react';
 import Link from 'next/link';
@@ -9,6 +10,7 @@ interface LeagueCardProps {
   memberCount: number;
   isJoined: boolean;
   index: number;
+  backgroundUrl?: string;
 }
 
 // Visual identity per league
@@ -52,9 +54,13 @@ const VISUALS: Record<string, {
   },
 };
 
-export default function LeagueCard({ league, memberCount, isJoined, index }: LeagueCardProps) {
+export default function LeagueCard({ league, memberCount, isJoined, index, backgroundUrl }: LeagueCardProps) {
   const v = VISUALS[league.id] || VISUALS['fase-grupos'];
   const prizes = league.prizeDistribution;
+  // Static file takes priority over Firestore upload
+  const staticBg = `/leagues/${league.id}/bg.jpg`;
+  const [useFallback, setUseFallback] = useState(false);
+  const resolvedBg = !useFallback ? staticBg : (backgroundUrl ?? null);
 
   return (
     <motion.div
@@ -67,6 +73,18 @@ export default function LeagueCard({ league, memberCount, isJoined, index }: Lea
           className="relative rounded-2xl overflow-hidden border border-white/6 active:scale-[0.98] transition-transform duration-150"
           style={{ background: v.bg }}
         >
+          {/* Background image — static file or Firestore upload */}
+          {resolvedBg && (
+            <img
+              src={resolvedBg}
+              alt=""
+              aria-hidden
+              onError={() => setUseFallback(true)}
+              className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+              style={{ opacity: 0.18 }}
+            />
+          )}
+
           {/* Pattern overlay */}
           <div
             className="absolute inset-0 pointer-events-none"
