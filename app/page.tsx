@@ -12,7 +12,7 @@ export default function HomePage() {
   return (
     <div className="min-h-dvh">
       {/* Header */}
-      <header className="flex items-center justify-between px-4 pt-14 pb-5">
+      <header className="flex items-center justify-between px-4 pt-7 pb-5">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-white">LigaMundial</h1>
           <p className="text-white/30 text-xs mt-0.5 font-medium tracking-wide">FIFA World Cup 2026</p>
