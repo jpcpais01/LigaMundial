@@ -40,9 +40,6 @@ export default function HomePage() {
         )}
       </header>
 
-      {/* Tournament countdown */}
-      <TournamentBanner />
-
       {/* Live / Next match */}
       <section className="mt-3">
         <div className="px-4 mb-3">
@@ -59,44 +56,3 @@ export default function HomePage() {
   );
 }
 
-function TournamentBanner() {
-  const tournamentStart = new Date('2026-06-11T20:00:00-06:00');
-  const now = new Date();
-  const diffMs = tournamentStart.getTime() - now.getTime();
-  const diffDays = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)));
-
-  if (diffDays <= 0) return null;
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 6 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.15, duration: 0.4 }}
-      className="mx-4 mb-2"
-    >
-      <div
-        className="relative rounded-2xl overflow-hidden border border-white/6 px-5 py-4 flex items-center justify-between"
-        style={{ background: 'linear-gradient(135deg, #0c1a3a 0%, #050714 100%)' }}
-      >
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            backgroundImage: `repeating-linear-gradient(-45deg, transparent, transparent 20px, rgba(255,255,255,0.015) 20px, rgba(255,255,255,0.015) 21px)`,
-          }}
-        />
-        <div className="relative">
-          <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/25 mb-0.5">
-            Início do Torneio
-          </p>
-          <p className="text-white font-semibold text-sm">11 Jun · Estadio Azteca</p>
-        </div>
-        <div className="relative text-right">
-          <p className="text-4xl font-black tracking-tight" style={{ color: '#fbbf24' }}>
-            {diffDays}
-          </p>
-          <p className="text-white/25 text-[10px] font-medium uppercase tracking-wider">dias</p>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
