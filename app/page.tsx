@@ -57,11 +57,11 @@ export default function HomePage() {
         <HeroLiveMatch />
       </section>
 
-      {/* Next 10 matches */}
-      <UpcomingMatches />
-
       {/* News */}
       <NewsSection />
+
+      {/* Next 10 matches */}
+      <UpcomingMatches />
     </div>
   );
 }
