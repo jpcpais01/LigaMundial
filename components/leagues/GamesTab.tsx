@@ -193,11 +193,7 @@ function MatchRow({
                   {bet.outcome === 'home' ? '1' : bet.outcome === 'draw' ? 'X' : '2'}
                 </span>
               </div>
-            ) : bettingOpen ? (
-              <span className="text-[10px] text-gold/60 font-medium">apostar</span>
-            ) : (
-              <span className="text-[9px] text-white/20">fechado</span>
-            )}
+            ) : null}
           </div>
         </div>
       </div>
