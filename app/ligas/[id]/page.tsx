@@ -1,17 +1,18 @@
 'use client';
 import { useState, useEffect, use } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, Users, Loader2, CheckCircle, LogIn, Info, LogOut } from 'lucide-react';
+import { ChevronLeft, Loader2, CheckCircle, LogIn, Info, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { getLeague } from '@/data/leagues';
 import { GROUP_MATCHES, KNOCKOUT_MATCHES } from '@/data/matches';
 import { useAuthContext } from '@/components/auth/AuthContext';
-import { joinLeague, leaveLeague, getLeagueMembers, getUserBetsForLeague } from '@/lib/firestore';
+import { joinLeague, leaveLeague, getLeagueMembers, getUserBetsForLeague, getUsersByUsernames } from '@/lib/firestore';
 import GamesTab from '@/components/leagues/GamesTab';
 import LeaderboardTab from '@/components/leagues/LeaderboardTab';
 import SpecialBetView from '@/components/leagues/SpecialBetView';
 import InfoModal from '@/components/leagues/InfoModal';
-import type { Bet } from '@/types';
+import { getInitials } from '@/lib/utils';
+import type { Bet, User } from '@/types';
 
 type Tab = 'jogos' | 'classificacao';
 
@@ -32,6 +33,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const [joined, setJoined] = useState(false);
   const [joining, setJoining] = useState(false);
   const [memberCount, setMemberCount] = useState(0);
+  const [memberUsers, setMemberUsers] = useState<User[]>([]);
   const [bets, setBets] = useState<Bet[]>([]);
   const [loading, setLoading] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
@@ -46,6 +48,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       setLoading(true);
       const members = await getLeagueMembers(league!.id);
       setMemberCount(members.length);
+      const users = await getUsersByUsernames(members.map(m => m.username));
+      setMemberUsers(users);
       if (user) {
         const isMember = members.find(m => m.username === user.username);
         setJoined(!!isMember);
@@ -67,7 +71,6 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   }
 
   const isSpecial = league.type === 'champion' || league.type === 'scorer';
-  const prizePool = memberCount * league.entryFee;
 
   // Can leave only if the first match of this league hasn't started yet
   const firstMatch = (() => {
@@ -84,6 +87,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       await leaveLeague(league.id, user.username);
       setJoined(false);
       setMemberCount(c => Math.max(0, c - 1));
+      setMemberUsers(prev => prev.filter(u => u.username !== user.username));
       setShowLeaveConfirm(false);
       updateUser({ joinedLeagues: (user.joinedLeagues || []).filter(id => id !== league.id) });
     } finally {
@@ -98,6 +102,15 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
       await joinLeague(league.id, user.username);
       setJoined(true);
       setMemberCount(c => c + 1);
+      // Add current user to member circles
+      const currentUserData: User = {
+        username: user.username,
+        createdAt: user.createdAt,
+        joinedLeagues: user.joinedLeagues,
+        avatarColor: user.avatarColor,
+        avatarUrl: user.avatarUrl,
+      };
+      setMemberUsers(prev => [...prev, currentUserData]);
       updateUser({ joinedLeagues: [...(user.joinedLeagues || []), league.id] });
     } finally {
       setJoining(false);
@@ -119,21 +132,46 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
           {/* Info button */}
           <button
             onClick={() => setShowInfo(true)}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-colors border border-white/8"
+            className="p-2 transition-colors"
           >
-            <Info size={15} className="text-white/40" />
+            <Info size={15} className="text-white/35" />
           </button>
         </div>
 
-        {/* Stats row */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 bg-white/4 rounded-xl px-3 py-2 border border-white/6">
-            <Users size={11} className="text-white/30" />
-            <span className="text-white/50 text-xs">{memberCount} jogadores</span>
-          </div>
-          <div className="flex items-center gap-1.5 bg-white/4 rounded-xl px-3 py-2 border border-white/6">
-            <span className="text-white/50 text-xs">{prizePool}€ em prémios</span>
-          </div>
+        {/* Member avatars row */}
+        <div className="flex items-center gap-2 min-h-[32px]">
+          {memberUsers.length === 0 ? (
+            <span className="text-white/20 text-xs">Nenhum membro ainda</span>
+          ) : (
+            <div className="flex items-center">
+              {memberUsers.slice(0, 9).map((u, i) => (
+                <div
+                  key={u.username}
+                  title={u.username}
+                  className="w-8 h-8 rounded-full border-2 border-[#050714] overflow-hidden flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white"
+                  style={{
+                    backgroundColor: u.avatarUrl ? undefined : u.avatarColor,
+                    marginLeft: i === 0 ? 0 : '-8px',
+                    zIndex: memberUsers.length - i,
+                    position: 'relative',
+                  }}
+                >
+                  {u.avatarUrl
+                    ? <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
+                    : getInitials(u.username)
+                  }
+                </div>
+              ))}
+              {memberUsers.length > 9 && (
+                <div
+                  className="w-8 h-8 rounded-full border-2 border-[#050714] bg-white/10 flex items-center justify-center flex-shrink-0 text-[9px] font-bold text-white/50"
+                  style={{ marginLeft: '-8px', position: 'relative', zIndex: 0 }}
+                >
+                  +{memberUsers.length - 9}
+                </div>
+              )}
+            </div>
+          )}
           {/* Accent dot */}
           <div className="flex-1 flex justify-end">
             <div className="w-2 h-2 rounded-full" style={{ backgroundColor: accent }} />

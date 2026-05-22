@@ -35,12 +35,12 @@ export default function BottomNav() {
                   )}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <div className="relative">
+                  <div className="relative w-[22px] h-[22px] flex items-center justify-center">
                     <item.icon size={22} strokeWidth={active ? 2.5 : 1.8} />
                     {active && (
                       <motion.div
                         layoutId="nav-dot"
-                        className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold"
+                        className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-gold"
                       />
                     )}
                   </div>

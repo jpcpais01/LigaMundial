@@ -130,6 +130,17 @@ export async function getAllSpecialBetsForLeague(leagueId: string): Promise<Spec
   return snaps.docs.map(d => d.data() as SpecialBet);
 }
 
+// ─── UTILIZADORES (update) ───────────────────────────────────────────────────
+export async function updateUserDoc(username: string, data: Partial<import('@/types').User>): Promise<void> {
+  await updateDoc(doc(db, 'users', username), data as Record<string, unknown>);
+}
+
+export async function getUsersByUsernames(usernames: string[]): Promise<import('@/types').User[]> {
+  if (usernames.length === 0) return [];
+  const snaps = await Promise.all(usernames.map(u => getDoc(doc(db, 'users', u))));
+  return snaps.filter(d => d.exists()).map(d => d.data() as import('@/types').User);
+}
+
 // ─── RESULTADOS DOS JOGOS (admin) ─────────────────────────────────────────────
 export async function setMatchResult(result: MatchResult): Promise<void> {
   await setDoc(doc(db, 'results', result.matchId), result);

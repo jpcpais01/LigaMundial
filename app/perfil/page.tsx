@@ -1,10 +1,14 @@
 'use client';
+import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, ChevronRight, LogIn } from 'lucide-react';
+import { LogOut, ChevronRight, LogIn, Camera, Loader2 } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { LEAGUES } from '@/data/leagues';
 import Link from 'next/link';
 import { getInitials } from '@/lib/utils';
+import { storage } from '@/lib/firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { updateUserDoc } from '@/lib/firestore';
 
 const ACCENT: Record<string, string> = {
   'fase-grupos':    '#3b82f6',
@@ -15,7 +19,28 @@ const ACCENT: Record<string, string> = {
 };
 
 export default function PerfilPage() {
-  const { user, logout, setShowAuthModal } = useAuthContext();
+  const { user, logout, setShowAuthModal, updateUser } = useAuthContext();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  async function handleAvatarChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    setUploading(true);
+    try {
+      const storageRef = ref(storage, `avatars/${user.username}`);
+      await uploadBytes(storageRef, file);
+      const url = await getDownloadURL(storageRef);
+      await updateUserDoc(user.username, { avatarUrl: url });
+      updateUser({ avatarUrl: url });
+    } catch (err) {
+      console.error('Avatar upload failed', err);
+    } finally {
+      setUploading(false);
+      // Reset input so same file can be re-selected
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
 
   if (!user) {
     return (
@@ -54,17 +79,56 @@ export default function PerfilPage() {
         animate={{ opacity: 1, y: 0 }}
         className="mx-4 border border-white/6 bg-white/3 rounded-3xl p-6 flex items-center gap-4 mb-6"
       >
-        <div
-          className="w-16 h-16 rounded-2xl flex items-center justify-center text-white text-xl font-black flex-shrink-0"
-          style={{ backgroundColor: user.avatarColor }}
-        >
-          {getInitials(user.username)}
+        {/* Avatar with camera overlay */}
+        <div className="relative flex-shrink-0">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="relative w-16 h-16 rounded-2xl overflow-hidden group"
+          >
+            {user.avatarUrl ? (
+              <img
+                src={user.avatarUrl}
+                alt={user.username}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-white text-xl font-black"
+                style={{ backgroundColor: user.avatarColor }}
+              >
+                {getInitials(user.username)}
+              </div>
+            )}
+            {/* Overlay */}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
+              {uploading
+                ? <Loader2 size={16} className="text-white animate-spin" />
+                : <Camera size={16} className="text-white" />
+              }
+            </div>
+          </button>
+          {uploading && (
+            <div className="absolute inset-0 rounded-2xl bg-black/50 flex items-center justify-center">
+              <Loader2 size={16} className="text-white animate-spin" />
+            </div>
+          )}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarChange}
+          />
         </div>
+
         <div>
           <h2 className="text-white font-black text-xl tracking-tight">{user.username}</h2>
           <p className="text-white/30 text-xs mt-0.5">
             Membro desde {new Date(user.createdAt).toLocaleDateString('pt-PT', { month: 'long', year: 'numeric' })}
           </p>
+          <p className="text-white/20 text-[10px] mt-1">Toca no avatar para mudar a foto</p>
         </div>
       </motion.div>
 

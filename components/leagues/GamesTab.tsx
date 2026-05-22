@@ -184,9 +184,16 @@ function MatchRow({
           </div>
 
           {/* Score / VS */}
-          <div className="w-16 text-center flex-shrink-0">
+          <div className="w-16 text-center flex-shrink-0 flex flex-col items-center gap-0.5">
+            {bet && (
+              <span className="text-[9px] text-gold/60 font-medium leading-none">
+                {bet.exactHome !== null ? `${bet.exactHome}-${bet.exactAway}` : ''}
+                {bet.exactHome !== null ? ' ' : ''}
+                {bet.outcome === 'home' ? '1' : bet.outcome === 'draw' ? 'X' : '2'}
+              </span>
+            )}
             {(isLive || isFinished) && homeScore !== undefined ? (
-              <span className="text-white font-black text-base">
+              <span className="text-white font-black text-base leading-none">
                 {homeScore} – {awayScore}
               </span>
             ) : (
@@ -198,22 +205,6 @@ function MatchRow({
           <div className="flex-1 flex items-center gap-2">
             <span className="text-xl">{away.flag}</span>
             <span className="text-white text-xs font-semibold leading-tight">{away.shortName}</span>
-          </div>
-
-          {/* Bet indicator */}
-          <div className="w-14 flex-shrink-0 text-right">
-            {bet ? (
-              <div className="flex flex-col items-end gap-0.5">
-                {bet.exactHome !== null && (
-                  <span className="text-gold text-[10px] font-bold">
-                    {bet.exactHome}–{bet.exactAway}
-                  </span>
-                )}
-                <span className="text-[9px] text-white/30">
-                  {bet.outcome === 'home' ? '1' : bet.outcome === 'draw' ? 'X' : '2'}
-                </span>
-              </div>
-            ) : null}
           </div>
         </div>
       </div>

@@ -4,6 +4,7 @@ export interface User {
   createdAt: string; // ISO string
   joinedLeagues: string[];
   avatarColor: string;
+  avatarUrl?: string; // Firebase Storage download URL
 }
 
 // ─── EQUIPAS ─────────────────────────────────────────────────────────────────

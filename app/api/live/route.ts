@@ -19,7 +19,7 @@ type FirestoreLiveDoc = {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const FIRESTORE_DOC  = 'liveScores/current';
-const CACHE_MS       = 5 * 60 * 1000; // 5 min — only 1 API call per 5 min globally
+const CACHE_MS       = 10 * 60 * 1000; // 10 min — only 1 API call per 10 min globally
 
 // ─── Is any match happening right now? ───────────────────────────────────────
 function anyMatchActive(): boolean {
