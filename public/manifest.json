@@ -4,26 +4,21 @@
   "description": "Liga privada de apostas do Mundial FIFA 2026",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#050714",
-  "theme_color": "#050714",
+  "background_color": "#060810",
+  "theme_color": "#060810",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon",
+      "src": "/api/pwa-icon?size=192&v=3",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/apple-icon",
-      "sizes": "180x180",
-      "type": "image/png"
+      "src": "/api/pwa-icon?size=512&v=3",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
