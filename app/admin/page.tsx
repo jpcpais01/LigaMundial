@@ -115,6 +115,7 @@ export default function AdminPage() {
         homeScore: h,
         awayScore: a,
         setAt: new Date().toISOString(),
+        source: 'admin',
       });
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);

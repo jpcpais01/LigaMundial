@@ -106,6 +106,9 @@ export interface MatchResult {
   homeScore: number;
   awayScore: number;
   setAt: string;
+  // 'auto' = liquidado automaticamente pela API; 'admin' (ou ausente) = manual.
+  // Resultados manuais nunca são substituídos pela liquidação automática.
+  source?: 'auto' | 'admin';
 }
 
 // ─── MEMBRO DA LIGA ──────────────────────────────────────────────────────────

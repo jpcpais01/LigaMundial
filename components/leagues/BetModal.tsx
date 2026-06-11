@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Clock, Loader2, Check, Lock } from 'lucide-react';
 import { getTeam } from '@/data/teams';
 import { formatMatchDate, isBettingOpen } from '@/lib/utils';
-import { saveBet, getBet } from '@/lib/firestore';
-import { getOutcomeFromScore } from '@/lib/scoring';
-import type { Match, Outcome, Bet } from '@/types';
+import { saveBet, getBet, getMatchResult } from '@/lib/firestore';
+import { getOutcomeFromScore, calculateBetPoints } from '@/lib/scoring';
+import type { Match, Outcome, Bet, MatchResult } from '@/types';
 
 interface BetModalProps {
   match: Match | null;
@@ -22,14 +22,20 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [existing, setExisting] = useState<Bet | null>(null);
+  const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(true);
 
   const bettingOpen = match ? isBettingOpen(match.scheduledAt) : false;
+  // Pontos calculados em tempo real a partir do resultado oficial
+  const earnedPoints = existing && result ? calculateBetPoints(existing, result) : null;
 
   useEffect(() => {
     if (!match) return;
     setLoading(true);
-    getBet(leagueId, match.id, username).then(b => {
+    Promise.all([
+      getBet(leagueId, match.id, username),
+      getMatchResult(match.id),
+    ]).then(([b, r]) => {
       if (b) {
         setExisting(b);
         setExactHome(b.exactHome !== null ? String(b.exactHome) : '');
@@ -39,6 +45,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
         setExisting(null);
         setExactHome(''); setExactAway(''); setOutcome(null);
       }
+      setResult(r);
       setSaved(false);
       setLoading(false);
     });
@@ -114,7 +121,13 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                   <p className="text-white font-bold text-sm">{home.shortName}</p>
                 </div>
 
-                {match.status !== 'scheduled' && match.homeScore !== undefined ? (
+                {result ? (
+                  <div className="flex items-center gap-2 px-4">
+                    <span className="text-3xl font-black text-white tabular-nums">{result.homeScore}</span>
+                    <span className="text-white/20 text-lg">–</span>
+                    <span className="text-3xl font-black text-white tabular-nums">{result.awayScore}</span>
+                  </div>
+                ) : match.status !== 'scheduled' && match.homeScore !== undefined ? (
                   <div className="flex items-center gap-2 px-4">
                     <span className="text-3xl font-black text-white tabular-nums">{match.homeScore}</span>
                     <span className="text-white/20 text-lg">–</span>
@@ -151,8 +164,8 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                           {existing.outcome === 'home' ? `1 (${home.shortName})` : existing.outcome === 'draw' ? 'X' : `2 (${away.shortName})`}
                         </span>
                       </div>
-                      {existing.points !== null && (
-                        <p className="text-gold font-bold text-center mt-2 text-lg">+{existing.points} pts</p>
+                      {earnedPoints !== null && (
+                        <p className="text-gold font-bold text-center mt-2 text-lg">+{earnedPoints} pts</p>
                       )}
                     </div>
                   )}
