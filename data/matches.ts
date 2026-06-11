@@ -154,6 +154,12 @@ export const KNOCKOUT_MATCHES: Match[] = [
 
 export const ALL_MATCHES = [...GROUP_MATCHES, ...KNOCKOUT_MATCHES];
 
+// Início do torneio = kick-off do primeiro jogo agendado
+export const TOURNAMENT_START = ALL_MATCHES.reduce(
+  (min, m) => (m.scheduledAt < min ? m.scheduledAt : min),
+  ALL_MATCHES[0].scheduledAt,
+);
+
 export const getMatchById = (id: string) => ALL_MATCHES.find(m => m.id === id);
 
 export const getMatchesByGroup = (group: string) =>

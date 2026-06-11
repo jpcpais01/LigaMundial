@@ -15,7 +15,7 @@ export const LEAGUES: League[] = [
   },
   {
     id: 'fase-copa',
-    name: 'Liga Fase de Copa',
+    name: 'Liga Fase de Taça',
     subtitle: 'Fase a Eliminar Geral',
     description: 'Aposta em todos os jogos da fase a eliminar. Resultado exacto vale 3 pontos, 1X2 vale 1 ponto.',
     type: 'regular',
@@ -29,7 +29,7 @@ export const LEAGUES: League[] = [
     id: 'extra-jornadas',
     name: 'Extra — Jornadas',
     subtitle: 'Liga por Jornada',
-    description: 'A classificação reinicia a cada jornada. 3 jornadas na fase de grupos, depois cada ronda da fase a eliminar conta como uma jornada.',
+    description: 'A classificação reinicia a cada jornada. 3 jornadas na fase de grupos, depois cada ronda da fase a eliminar conta como uma jornada. As apostas feitas nas ligas Fase de Grupos e Fase de Taça são copiadas automaticamente para aqui.',
     type: 'regular',
     entryFee: 10,
     prizeDistribution: { first: 60, second: 30, third: 10 },

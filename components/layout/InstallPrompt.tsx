@@ -2,27 +2,27 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Share } from 'lucide-react';
+import {
+  getInstallPrompt, clearInstallPrompt, subscribeInstallPrompt,
+  isStandalone, isIOS as detectIOS,
+} from '@/lib/pwa';
 
 const COOLDOWN_MS = 6 * 60 * 60 * 1000; // 6 h
 const LS_KEY = 'install_prompt_at';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type BeforeInstallPromptEvent = Event & { prompt: () => void; userChoice: Promise<{ outcome: string }> };
-
 export default function InstallPrompt() {
-  const [show, setShow]                   = useState(false);
-  const [isIOS, setIsIOS]                 = useState(false);
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [show, setShow]   = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
     // Already running as installed PWA — never show
-    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    if (isStandalone()) return;
 
     // Respect cooldown
     const ts = localStorage.getItem(LS_KEY);
     if (ts && Date.now() - parseInt(ts) < COOLDOWN_MS) return;
 
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !('MSStream' in window);
+    const ios = detectIOS();
     setIsIOS(ios);
 
     if (ios) {
@@ -31,15 +31,16 @@ export default function InstallPrompt() {
       return () => clearTimeout(t);
     }
 
-    // Android / Chrome
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      const t = setTimeout(() => setShow(true), 2500);
-      return () => clearTimeout(t);
+    // Android / Chrome — show once the captured prompt is available
+    let t: ReturnType<typeof setTimeout> | null = null;
+    const maybeShow = () => {
+      if (getInstallPrompt() && t === null) {
+        t = setTimeout(() => setShow(true), 2500);
+      }
     };
-    window.addEventListener('beforeinstallprompt', handler);
-    return () => window.removeEventListener('beforeinstallprompt', handler);
+    maybeShow();
+    const unsubscribe = subscribeInstallPrompt(maybeShow);
+    return () => { unsubscribe(); if (t !== null) clearTimeout(t); };
   }, []);
 
   function dismiss() {
@@ -48,11 +49,12 @@ export default function InstallPrompt() {
   }
 
   async function handleInstall() {
+    const deferredPrompt = getInstallPrompt();
     if (deferredPrompt) {
       deferredPrompt.prompt();
       await deferredPrompt.userChoice;
       dismiss();
-      setDeferredPrompt(null);
+      clearInstallPrompt();
     } else {
       // iOS — just dismiss; user reads the instructions
       dismiss();

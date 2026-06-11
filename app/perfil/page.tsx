@@ -1,12 +1,16 @@
 'use client';
-import { useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { LogOut, ChevronRight, LogIn, Camera, Loader2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { LogOut, ChevronRight, LogIn, Camera, Loader2, Download, Share, CheckCircle } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { LEAGUES } from '@/data/leagues';
 import Link from 'next/link';
 import { getInitials } from '@/lib/utils';
 import { updateUserDoc } from '@/lib/firestore';
+import {
+  getInstallPrompt, clearInstallPrompt, subscribeInstallPrompt,
+  isStandalone, isIOS,
+} from '@/lib/pwa';
 
 const ACCENT: Record<string, string> = {
   'fase-grupos':    '#3b82f6',
@@ -38,6 +42,85 @@ function compressAvatar(file: File): Promise<string> {
     img.onerror = reject;
     img.src = url;
   });
+}
+
+// ─── Botão Instalar App (PWA) ────────────────────────────────────────────────
+function InstallAppSection() {
+  const [standalone, setStandalone] = useState(true); // assume true até confirmar, evita flash
+  const [ios, setIos] = useState(false);
+  const [canPrompt, setCanPrompt] = useState(false);
+  const [installed, setInstalled] = useState(false);
+  const [showHelp, setShowHelp] = useState(false);
+
+  useEffect(() => {
+    setStandalone(isStandalone());
+    setIos(isIOS());
+    setCanPrompt(!!getInstallPrompt());
+    return subscribeInstallPrompt(() => setCanPrompt(!!getInstallPrompt()));
+  }, []);
+
+  // Já está a correr como app instalada — não mostrar nada
+  if (standalone) return null;
+
+  async function handleClick() {
+    const prompt = getInstallPrompt();
+    if (prompt) {
+      prompt.prompt();
+      const choice = await prompt.userChoice;
+      clearInstallPrompt();
+      if (choice.outcome === 'accepted') setInstalled(true);
+    } else {
+      // iOS (sem beforeinstallprompt) ou navegador sem suporte: mostrar instruções
+      setShowHelp(v => !v);
+    }
+  }
+
+  return (
+    <div className="px-4 mb-3">
+      {installed ? (
+        <div className="w-full flex items-center justify-center gap-2 bg-emerald-500/8 border border-emerald-500/15
+                        rounded-2xl py-3.5 text-emerald-400 text-sm font-medium">
+          <CheckCircle size={15} />
+          App instalada
+        </div>
+      ) : (
+        <motion.button
+          onClick={handleClick}
+          className="w-full flex items-center justify-center gap-2 bg-white/3 border border-white/6
+                     rounded-2xl py-3.5 text-white/60 text-sm font-medium hover:bg-white/6 transition-colors"
+          whileTap={{ scale: 0.97 }}
+        >
+          <Download size={15} />
+          Instalar aplicação
+        </motion.button>
+      )}
+
+      <AnimatePresence>
+        {showHelp && !installed && !canPrompt && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="mt-2 bg-white/4 rounded-2xl px-4 py-3 border border-white/6 flex items-center gap-3">
+              <Share size={15} className="text-white/40 flex-shrink-0" />
+              <p className="text-white/50 text-xs leading-relaxed">
+                {ios ? (
+                  <>No Safari, toca em <span className="text-white/70 font-semibold">Partilhar</span> e depois em{' '}
+                  <span className="text-white/70 font-semibold">Adicionar ao ecrã inicial</span>.</>
+                ) : (
+                  <>No menu do navegador, escolhe{' '}
+                  <span className="text-white/70 font-semibold">Instalar aplicação</span> ou{' '}
+                  <span className="text-white/70 font-semibold">Adicionar ao ecrã inicial</span>.</>
+                )}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
 }
 
 export default function PerfilPage() {
@@ -192,6 +275,9 @@ export default function PerfilPage() {
           <Link href="/ligas" className="text-white/40 underline">Ver ligas</Link>
         </div>
       )}
+
+      {/* Instalar PWA */}
+      <InstallAppSection />
 
       {/* Logout */}
       <div className="px-4">

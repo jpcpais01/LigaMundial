@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Check, Loader2, Search } from 'lucide-react';
+import { Check, Loader2, Search, Lock } from 'lucide-react';
 import { TEAMS_LIST } from '@/data/teams';
 import { saveSpecialBet, getSpecialBet } from '@/lib/firestore';
+import { isSpecialBettingOpen, formatMatchDate } from '@/lib/utils';
+import { TOURNAMENT_START } from '@/data/matches';
 import type { League, SpecialBet } from '@/types';
 
 interface SpecialBetViewProps {
@@ -21,6 +23,8 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
   const [saved, setSaved] = useState(false);
 
   const isChampion = league.id === 'extra-campeao';
+  // Apostas especiais fecham 5 min antes do primeiro jogo do torneio
+  const bettingOpen = isSpecialBettingOpen();
 
   useEffect(() => {
     getSpecialBet(league.id as any, username).then(b => {
@@ -35,7 +39,7 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
 
   const handleSave = async () => {
     const prediction = isChampion ? selected : playerName.trim();
-    if (!prediction) return;
+    if (!prediction || !isSpecialBettingOpen()) return;
     setSaving(true);
     try {
       await saveSpecialBet({ username, leagueId: league.id as any, prediction });
@@ -66,6 +70,11 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
                         px-4 py-1.5 rounded-full border border-gold/20">
           🏆 100% do prémio para o(s) vencedor(es)
         </div>
+        {bettingOpen && (
+          <p className="text-white/25 text-xs mt-3">
+            Apostas abertas até 5 min antes do primeiro jogo do torneio · {formatMatchDate(TOURNAMENT_START)}
+          </p>
+        )}
       </div>
 
       {existing && (
@@ -82,7 +91,17 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
         </div>
       )}
 
-      {isChampion ? (
+      {!bettingOpen ? (
+        <div className="flex flex-col items-center gap-3 py-8 text-center">
+          <Lock size={20} className="text-white/20" />
+          <p className="text-white/40 text-sm">
+            Apostas fechadas — encerraram 5 minutos antes do primeiro jogo do torneio ({formatMatchDate(TOURNAMENT_START)}).
+          </p>
+          {!existing && (
+            <p className="text-white/25 text-xs">Não registaste nenhuma aposta nesta liga.</p>
+          )}
+        </div>
+      ) : isChampion ? (
         <>
           {/* Search */}
           <div className="relative mb-3">
@@ -141,6 +160,7 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
       )}
 
       {/* Save button */}
+      {bettingOpen && (
       <motion.button
         onClick={handleSave}
         disabled={saving || (!selected && !playerName.trim())}
@@ -160,6 +180,7 @@ export default function SpecialBetView({ league, username }: SpecialBetViewProps
           `${existing ? '✏️ Alterar aposta' : '💰 Confirmar aposta'}`
         )}
       </motion.button>
+      )}
     </div>
   );
 }

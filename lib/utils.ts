@@ -1,7 +1,8 @@
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { format, formatDistanceToNow, isPast, isFuture } from 'date-fns';
+import { format, formatDistanceToNow, isPast } from 'date-fns';
 import { pt } from 'date-fns/locale';
+import { TOURNAMENT_START } from '@/data/matches';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,8 +25,17 @@ export function timeUntil(iso: string): string {
   return formatDistanceToNow(new Date(iso), { locale: pt, addSuffix: true });
 }
 
+// As apostas fecham 5 minutos antes do início do jogo
+export const BETTING_CUTOFF_MS = 5 * 60 * 1000;
+
 export function isBettingOpen(scheduledAt: string): boolean {
-  return isFuture(new Date(scheduledAt));
+  return new Date(scheduledAt).getTime() - Date.now() > BETTING_CUTOFF_MS;
+}
+
+// Ligas especiais (campeão / melhor marcador) fecham 5 minutos antes
+// do primeiro jogo de todo o torneio
+export function isSpecialBettingOpen(): boolean {
+  return isBettingOpen(TOURNAMENT_START);
 }
 
 export function getInitials(username: string): string {

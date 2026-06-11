@@ -51,7 +51,8 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
   }, [exactHome, exactAway]);
 
   const handleSave = async () => {
-    if (!match || !outcome) return;
+    // Re-verifica o prazo no momento de guardar (o modal pode ficar aberto)
+    if (!match || !outcome || !isBettingOpen(match.scheduledAt)) return;
     setSaving(true);
     try {
       await saveBet({

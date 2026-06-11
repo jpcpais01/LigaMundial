@@ -51,6 +51,11 @@ export async function joinLeague(leagueId: string, username: string): Promise<vo
       await updateDoc(userRef, { joinedLeagues: [...current, leagueId] });
     }
   }
+  // Inscrição tardia na Extra — Jornadas: importa as apostas já feitas
+  // nas ligas gerais (fase de grupos / fase de taça)
+  if (leagueId === JORNADAS_LEAGUE_ID) {
+    await copyExistingBetsToJornadas(username);
+  }
 }
 
 export async function isLeagueMember(leagueId: string, username: string): Promise<boolean> {
@@ -78,7 +83,14 @@ export async function getLeagueMembers(leagueId: string): Promise<LeagueMember[]
 }
 
 // ─── APOSTAS ─────────────────────────────────────────────────────────────────
-export async function saveBet(bet: Omit<Bet, 'id' | 'createdAt' | 'updatedAt' | 'points'>): Promise<void> {
+// A liga Extra — Jornadas espelha automaticamente as apostas feitas nas ligas
+// gerais (fase de grupos e fase de taça) para os membros de ambas.
+const JORNADAS_LEAGUE_ID = 'extra-jornadas';
+const JORNADAS_SOURCE_LEAGUES = ['fase-grupos', 'fase-copa'];
+
+type NewBet = Omit<Bet, 'id' | 'createdAt' | 'updatedAt' | 'points'>;
+
+async function writeBet(bet: NewBet): Promise<void> {
   const id = `${bet.leagueId}_${bet.matchId}_${bet.username}`;
   const now = new Date().toISOString();
   const existing = await getDoc(doc(db, 'bets', id));
@@ -87,6 +99,38 @@ export async function saveBet(bet: Omit<Bet, 'id' | 'createdAt' | 'updatedAt' | 
   } else {
     await setDoc(doc(db, 'bets', id), { ...bet, id, points: null, createdAt: now, updatedAt: now });
   }
+}
+
+export async function saveBet(bet: NewBet): Promise<void> {
+  await writeBet(bet);
+  // Espelhar para a liga Extra — Jornadas, se o utilizador for membro
+  if (JORNADAS_SOURCE_LEAGUES.includes(bet.leagueId)) {
+    const isMember = await isLeagueMember(JORNADAS_LEAGUE_ID, bet.username);
+    if (isMember) {
+      await writeBet({ ...bet, leagueId: JORNADAS_LEAGUE_ID });
+    }
+  }
+}
+
+// Quando alguém se inscreve mais tarde na Extra — Jornadas, copia as apostas
+// já feitas nas ligas gerais (sem substituir apostas já existentes na jornadas)
+async function copyExistingBetsToJornadas(username: string): Promise<void> {
+  const [jornadasBets, ...sourceBets] = await Promise.all([
+    getUserBetsForLeague(JORNADAS_LEAGUE_ID, username),
+    ...JORNADAS_SOURCE_LEAGUES.map(l => getUserBetsForLeague(l, username)),
+  ]);
+  const alreadyBet = new Set(jornadasBets.map(b => b.matchId));
+  const toCopy = sourceBets.flat().filter(b => !alreadyBet.has(b.matchId));
+  await Promise.all(
+    toCopy.map(b => writeBet({
+      username,
+      leagueId: JORNADAS_LEAGUE_ID,
+      matchId: b.matchId,
+      exactHome: b.exactHome,
+      exactAway: b.exactAway,
+      outcome: b.outcome,
+    }))
+  );
 }
 
 export async function getBet(leagueId: string, matchId: string, username: string): Promise<Bet | null> {
