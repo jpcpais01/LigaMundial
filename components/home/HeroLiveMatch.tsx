@@ -1,34 +1,57 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Clock } from 'lucide-react';
+import Link from 'next/link';
 import { ALL_MATCHES } from '@/data/matches';
 import { getTeam } from '@/data/teams';
 import { formatMatchDate, formatTime, timeUntil } from '@/lib/utils';
 import type { Match } from '@/types';
 import type { LiveScoresMap } from '@/app/api/live/route';
 
-function getNextOrLiveMatch(): Match | null {
-  const now = new Date();
-  const live = ALL_MATCHES.find(m => m.status === 'live');
-  if (live) return live;
-  const upcoming = ALL_MATCHES
-    .filter(m => new Date(m.scheduledAt) > now && m.homeTeamId !== 'TBD')
-    .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime());
-  return upcoming[0] || null;
+const liveKeyOf = (m: Match) => `${m.homeTeamId}_${m.awayTeamId}`;
+const byKickoff = (a: Match, b: Match) =>
+  new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
+
+// Prioridade: jogo ao vivo > jogo em curso (API ainda sem dados) > próximo jogo
+function getFeaturedMatch(scores: LiveScoresMap): Match | null {
+  const now = Date.now();
+  const playable = ALL_MATCHES.filter(m => m.homeTeamId !== 'TBD');
+
+  const live = playable.filter(m => scores[liveKeyOf(m)]?.status === 'live').sort(byKickoff);
+  if (live.length > 0) return live[0];
+
+  // Começou há menos de 2h30 e ainda não há resultado final — deve estar a decorrer
+  const inProgress = playable
+    .filter(m => {
+      const start = new Date(m.scheduledAt).getTime();
+      return now >= start && now - start <= 2.5 * 60 * 60 * 1000
+        && scores[liveKeyOf(m)]?.status !== 'finished';
+    })
+    .sort(byKickoff);
+  if (inProgress.length > 0) return inProgress[0];
+
+  const upcoming = playable.filter(m => new Date(m.scheduledAt).getTime() > now).sort(byKickoff);
+  return upcoming[0] ?? null;
 }
 
 export default function HeroLiveMatch() {
-  const [match, setMatch] = useState<Match | null>(null);
   const [countdown, setCountdown] = useState('');
   const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
+  const [tick, setTick] = useState(0);
 
-  // Pick match
-  useEffect(() => { setMatch(getNextOrLiveMatch()); }, []);
+  // Reavalia a escolha do jogo a cada 30 s (transições hora-a-hora)
+  useEffect(() => {
+    const iv = setInterval(() => setTick(t => t + 1), 30_000);
+    return () => clearInterval(iv);
+  }, []);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const match = useMemo(() => getFeaturedMatch(liveScores), [liveScores, tick]);
 
   // Countdown
   useEffect(() => {
-    if (!match || match.status !== 'scheduled') return;
+    if (!match) return;
     const interval = setInterval(() => setCountdown(timeUntil(match.scheduledAt)), 1000);
     setCountdown(timeUntil(match.scheduledAt));
     return () => clearInterval(interval);
@@ -49,32 +72,41 @@ export default function HeroLiveMatch() {
 
   if (!match) {
     return (
-      <div className="mx-4 rounded-2xl border border-white/6 bg-white/3 p-6 text-center">
-        <p className="text-white/25 text-sm">Nenhum jogo em destaque</p>
-      </div>
+      <>
+        <SectionLabel live={false} />
+        <div className="mx-4 rounded-2xl border border-white/6 bg-white/3 p-6 text-center">
+          <p className="text-white/25 text-sm">Nenhum jogo em destaque</p>
+        </div>
+      </>
     );
   }
 
   const home = getTeam(match.homeTeamId);
   const away = getTeam(match.awayTeamId);
 
-  const liveKey = `${match.homeTeamId}_${match.awayTeamId}`;
-  const live = liveScores[liveKey];
+  const live = liveScores[liveKeyOf(match)];
   const isLive = live?.status === 'live' || match.status === 'live';
   const isFinished = live?.status === 'finished' || match.status === 'finished';
   const homeScore = live?.homeScore ?? match.homeScore;
   const awayScore = live?.awayScore ?? match.awayScore;
+  const leagueHref = match.phase === 'group' ? '/ligas/fase-grupos' : '/ligas/fase-copa';
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1, duration: 0.4 }}
-      className="mx-4"
     >
+      <SectionLabel live={isLive} />
+      <Link href={leagueHref} className="block mx-4 active:scale-[0.985] transition-transform">
       <div
-        className="relative rounded-2xl overflow-hidden border border-white/6 p-5"
-        style={{ background: '#080d1e' }}
+        className={`relative rounded-2xl overflow-hidden border p-5 ${
+          isLive ? 'border-emerald-400/20' : 'border-white/6'
+        }`}
+        style={{
+          background: '#080d1e',
+          boxShadow: isLive ? '0 0 32px rgba(52,211,153,0.07)' : undefined,
+        }}
       >
         {/* Home flag — left half, clipped diagonally */}
         <div
@@ -198,10 +230,22 @@ export default function HeroLiveMatch() {
           </div>
           <div className="flex items-center gap-1.5 text-white/25 text-[11px]">
             <Clock size={10} />
-            <span>{countdown || formatMatchDate(match.scheduledAt)}</span>
+            <span>{isLive ? 'A decorrer' : countdown || formatMatchDate(match.scheduledAt)}</span>
           </div>
         </div>
       </div>
+      </Link>
     </motion.div>
+  );
+}
+
+function SectionLabel({ live }: { live: boolean }) {
+  return (
+    <div className="px-4 mb-3 flex items-center gap-2">
+      <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30">
+        {live ? 'A Decorrer Agora' : 'Jogo em Destaque'}
+      </p>
+      {live && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />}
+    </div>
   );
 }

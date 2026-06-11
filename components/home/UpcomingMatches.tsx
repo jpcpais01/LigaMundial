@@ -92,12 +92,14 @@ export default function UpcomingMatches() {
               return (
                 <div
                   key={match.id}
-                  className={`flex items-center gap-2 px-4 py-2.5 ${!isLast ? 'border-b border-white/4' : ''} ${isTBD ? 'opacity-35' : ''}`}
+                  className={`flex items-center gap-2 px-4 py-2.5 ${!isLast ? 'border-b border-white/4' : ''} ${isTBD ? 'opacity-35' : ''} ${isLive ? 'bg-emerald-400/4' : ''}`}
                 >
                   {/* Time / Status */}
                   <div className="w-11 flex-shrink-0 text-center">
                     {isLive ? (
-                      <span className="text-green-400 text-[9px] font-bold leading-none">⬤ LIVE</span>
+                      <span className="text-green-400 text-[9px] font-bold leading-none">
+                        ⬤ {liveScore?.elapsed ? `${liveScore.elapsed}'` : 'LIVE'}
+                      </span>
                     ) : isEnd ? (
                       <span className="text-white/25 text-[9px]">FIM</span>
                     ) : (
