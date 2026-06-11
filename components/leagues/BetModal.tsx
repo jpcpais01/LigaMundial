@@ -3,10 +3,10 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Clock, Loader2, Check, Lock } from 'lucide-react';
 import { getTeam } from '@/data/teams';
-import { formatMatchDate, isBettingOpen } from '@/lib/utils';
-import { saveBet, getBet, getMatchResult } from '@/lib/firestore';
+import { formatMatchDate, isBettingOpen, getInitials } from '@/lib/utils';
+import { saveBet, getBet, getMatchResult, getBetsForMatch, getUsersByUsernames } from '@/lib/firestore';
 import { getOutcomeFromScore, calculateBetPoints } from '@/lib/scoring';
-import type { Match, Outcome, Bet, MatchResult } from '@/types';
+import type { Match, Outcome, Bet, MatchResult, User } from '@/types';
 
 interface BetModalProps {
   match: Match | null;
@@ -24,10 +24,19 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
   const [existing, setExisting] = useState<Bet | null>(null);
   const [result, setResult] = useState<MatchResult | null>(null);
   const [loading, setLoading] = useState(true);
+  const [otherBets, setOtherBets] = useState<Bet[] | null>(null);
+  const [bettors, setBettors] = useState<Record<string, User>>({});
 
   const bettingOpen = match ? isBettingOpen(match.scheduledAt) : false;
   // Pontos calculados em tempo real a partir do resultado oficial
   const earnedPoints = existing && result ? calculateBetPoints(existing, result) : null;
+
+  // Com resultado exacto completo, o 1X2 fica bloqueado ao valor coerente
+  const lockedOutcome: Outcome | null = (() => {
+    const h = parseInt(exactHome);
+    const a = parseInt(exactAway);
+    return !isNaN(h) && !isNaN(a) ? getOutcomeFromScore(h, a) : null;
+  })();
 
   useEffect(() => {
     if (!match) return;
@@ -51,6 +60,22 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
     });
   }, [match, leagueId, username]);
 
+  // Apostas fechadas — carregar as apostas de todos os jogadores deste jogo
+  useEffect(() => {
+    if (!match || isBettingOpen(match.scheduledAt)) { setOtherBets(null); return; }
+    let alive = true;
+    getBetsForMatch(leagueId, match.id).then(async bets => {
+      const others = bets
+        .filter(b => b.username !== username)
+        .sort((a, b) => a.username.localeCompare(b.username));
+      const users = await getUsersByUsernames(others.map(b => b.username));
+      if (!alive) return;
+      setBettors(Object.fromEntries(users.map(u => [u.username, u])));
+      setOtherBets(others);
+    });
+    return () => { alive = false; };
+  }, [match, leagueId, username]);
+
   useEffect(() => {
     const h = parseInt(exactHome);
     const a = parseInt(exactAway);
@@ -59,14 +84,15 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
 
   const handleSave = async () => {
     // Re-verifica o prazo no momento de guardar (o modal pode ficar aberto)
-    if (!match || !outcome || !isBettingOpen(match.scheduledAt)) return;
+    const finalOutcome = lockedOutcome ?? outcome;
+    if (!match || !finalOutcome || !isBettingOpen(match.scheduledAt)) return;
     setSaving(true);
     try {
       await saveBet({
         username, leagueId, matchId: match.id,
         exactHome: exactHome !== '' ? parseInt(exactHome) : null,
         exactAway: exactAway !== '' ? parseInt(exactAway) : null,
-        outcome,
+        outcome: finalOutcome,
       });
       setSaved(true);
       setTimeout(onClose, 700);
@@ -169,6 +195,56 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                       )}
                     </div>
                   )}
+
+                  {/* Apostas dos outros jogadores — visíveis após o fecho */}
+                  {otherBets !== null && (
+                    <div className="mt-3 w-full text-left">
+                      <p className="text-white/30 text-xs mb-2 uppercase tracking-wider">
+                        Apostas dos jogadores {otherBets.length > 0 && `(${otherBets.length})`}
+                      </p>
+                      {otherBets.length === 0 ? (
+                        <p className="text-white/20 text-xs py-2">
+                          Mais ninguém apostou neste jogo.
+                        </p>
+                      ) : (
+                        <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                          {otherBets.map(b => {
+                            const u = bettors[b.username];
+                            const pts = result ? calculateBetPoints(b, result) : null;
+                            return (
+                              <div
+                                key={b.username}
+                                className="flex items-center gap-2.5 bg-white/3 border border-white/6 rounded-xl px-3 py-2"
+                              >
+                                <div
+                                  className="w-7 h-7 rounded-full overflow-hidden flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-white"
+                                  style={{ backgroundColor: u?.avatarUrl ? undefined : u?.avatarColor || '#6366f1' }}
+                                >
+                                  {u?.avatarUrl
+                                    ? <img src={u.avatarUrl} alt={b.username} className="w-full h-full object-cover" />
+                                    : getInitials(b.username)}
+                                </div>
+                                <span className="text-white/70 text-xs font-medium flex-1 truncate">{b.username}</span>
+                                {b.exactHome !== null && (
+                                  <span className="text-white font-bold text-xs tabular-nums">
+                                    {b.exactHome}–{b.exactAway}
+                                  </span>
+                                )}
+                                <span className="text-[10px] font-semibold text-white/40 bg-white/6 border border-white/8 px-2 py-0.5 rounded-full">
+                                  {b.outcome === 'home' ? '1' : b.outcome === 'draw' ? 'X' : '2'}
+                                </span>
+                                {pts !== null && (
+                                  <span className={`text-xs font-bold w-9 text-right ${pts > 0 ? 'text-gold' : 'text-white/25'}`}>
+                                    +{pts}
+                                  </span>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -206,20 +282,31 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                       1X2 <span className="text-gold/60 normal-case tracking-normal">+1 pt</span>
                     </p>
                     <div className="grid grid-cols-3 gap-2">
-                      {(['home', 'draw', 'away'] as Outcome[]).map(o => (
-                        <button
-                          key={o}
-                          onClick={() => setOutcome(o)}
-                          className={`py-3 rounded-2xl text-sm font-semibold transition-all ${
-                            outcome === o
-                              ? 'bg-gold text-black'
-                              : 'bg-white/4 text-white/50 border border-white/8 hover:bg-white/8'
-                          }`}
-                        >
-                          {o === 'home' ? `1  ${home.flag}` : o === 'draw' ? 'X' : `${away.flag}  2`}
-                        </button>
-                      ))}
+                      {(['home', 'draw', 'away'] as Outcome[]).map(o => {
+                        const blocked = lockedOutcome !== null && o !== lockedOutcome;
+                        return (
+                          <button
+                            key={o}
+                            onClick={() => { if (!blocked) setOutcome(o); }}
+                            disabled={blocked}
+                            className={`py-3 rounded-2xl text-sm font-semibold transition-all ${
+                              outcome === o
+                                ? 'bg-gold text-black'
+                                : blocked
+                                  ? 'bg-white/2 text-white/15 border border-white/4'
+                                  : 'bg-white/4 text-white/50 border border-white/8 hover:bg-white/8'
+                            }`}
+                          >
+                            {o === 'home' ? `1  ${home.flag}` : o === 'draw' ? 'X' : `${away.flag}  2`}
+                          </button>
+                        );
+                      })}
                     </div>
+                    {lockedOutcome !== null && (
+                      <p className="text-white/25 text-[11px] mt-2">
+                        O 1X2 é definido automaticamente pelo resultado exacto.
+                      </p>
+                    )}
                   </div>
 
                   {/* Save */}

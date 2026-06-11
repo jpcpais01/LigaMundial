@@ -3,6 +3,7 @@ import {
   query, where, getDocs, orderBy, serverTimestamp, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
+import { getOutcomeFromScore } from './scoring';
 import type { User, Bet, SpecialBet, LeagueMember, MatchResult } from '@/types';
 
 // ─── UTILIZADORES ────────────────────────────────────────────────────────────
@@ -90,7 +91,12 @@ const JORNADAS_SOURCE_LEAGUES = ['fase-grupos', 'fase-copa'];
 
 type NewBet = Omit<Bet, 'id' | 'createdAt' | 'updatedAt' | 'points'>;
 
-async function writeBet(bet: NewBet): Promise<void> {
+async function writeBet(rawBet: NewBet): Promise<void> {
+  // Com resultado exacto preenchido, o 1X2 é forçado a ser coerente com ele
+  const bet: NewBet =
+    rawBet.exactHome !== null && rawBet.exactAway !== null
+      ? { ...rawBet, outcome: getOutcomeFromScore(rawBet.exactHome, rawBet.exactAway) }
+      : rawBet;
   const id = `${bet.leagueId}_${bet.matchId}_${bet.username}`;
   const now = new Date().toISOString();
   const existing = await getDoc(doc(db, 'bets', id));
@@ -141,6 +147,18 @@ export async function getBet(leagueId: string, matchId: string, username: string
 
 export async function getUserBetsForLeague(leagueId: string, username: string): Promise<Bet[]> {
   const q = query(collection(db, 'bets'), where('leagueId', '==', leagueId), where('username', '==', username));
+  const snaps = await getDocs(q);
+  return snaps.docs.map(d => d.data() as Bet);
+}
+
+// Todas as apostas de um jogo numa liga — para mostrar aos restantes jogadores
+// depois de as apostas fecharem
+export async function getBetsForMatch(leagueId: string, matchId: string): Promise<Bet[]> {
+  const q = query(
+    collection(db, 'bets'),
+    where('leagueId', '==', leagueId),
+    where('matchId', '==', matchId),
+  );
   const snaps = await getDocs(q);
   return snaps.docs.map(d => d.data() as Bet);
 }
