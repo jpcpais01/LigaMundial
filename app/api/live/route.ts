@@ -23,7 +23,7 @@ type FirestoreLiveDoc = {
 // ─── Constants ────────────────────────────────────────────────────────────────
 // Fonte de dados: API pública da ESPN (sem chave, cobre o Mundial 2026)
 const ESPN_SCOREBOARD = 'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard';
-const ACTIVE_CACHE_MS = 60 * 1000;      // durante jogos: refresca a cada 60 s
+const ACTIVE_CACHE_MS = 30 * 1000;      // durante jogos: refresca a cada 30 s
 const IDLE_CACHE_MS   = 5 * 60 * 1000;  // sem jogos a decorrer: a cada 5 min
 const WINDOW_BEFORE_MS = 30 * 60 * 1000;
 const WINDOW_AFTER_MS  = 3 * 60 * 60 * 1000;

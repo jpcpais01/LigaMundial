@@ -1,10 +1,10 @@
 'use client';
-import { useMemo, useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { ALL_MATCHES } from '@/data/matches';
 import { getTeam } from '@/data/teams';
 import { formatTime, formatShortDate } from '@/lib/utils';
-import type { LiveScoresMap } from '@/app/api/live/route';
+import { useLiveScores } from '@/hooks/useLiveScores';
 import { isToday, isTomorrow } from 'date-fns';
 
 function dayLabel(iso: string): string {
@@ -23,19 +23,7 @@ function phaseShort(match: { phase: string; group?: string }): string {
 }
 
 export default function UpcomingMatches() {
-  const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
-
-  useEffect(() => {
-    async function fetchScores() {
-      try {
-        const res = await fetch('/api/live');
-        if (res.ok) setLiveScores(await res.json());
-      } catch {}
-    }
-    fetchScores();
-    const iv = setInterval(fetchScores, 60_000);
-    return () => clearInterval(iv);
-  }, []);
+  const liveScores = useLiveScores();
 
   // Next 10 matches: upcoming + currently live (within 3h window)
   const matches = useMemo(() => {

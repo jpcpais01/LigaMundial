@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { ALL_MATCHES } from '@/data/matches';
 import { getTeam } from '@/data/teams';
 import { formatMatchDate, formatTime, timeUntil } from '@/lib/utils';
+import { useLiveScores } from '@/hooks/useLiveScores';
 import type { Match } from '@/types';
 import type { LiveScoresMap } from '@/app/api/live/route';
 
@@ -37,7 +38,7 @@ function getFeaturedMatch(scores: LiveScoresMap): Match | null {
 
 export default function HeroLiveMatch() {
   const [countdown, setCountdown] = useState('');
-  const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
+  const liveScores = useLiveScores();
   const [tick, setTick] = useState(0);
 
   // Reavalia a escolha do jogo a cada 30 s (transições hora-a-hora)
@@ -56,19 +57,6 @@ export default function HeroLiveMatch() {
     setCountdown(timeUntil(match.scheduledAt));
     return () => clearInterval(interval);
   }, [match]);
-
-  // Poll live scores every 60 s
-  useEffect(() => {
-    async function fetchScores() {
-      try {
-        const res = await fetch('/api/live');
-        if (res.ok) setLiveScores(await res.json());
-      } catch {}
-    }
-    fetchScores();
-    const interval = setInterval(fetchScores, 60_000);
-    return () => clearInterval(interval);
-  }, []);
 
   if (!match) {
     return (

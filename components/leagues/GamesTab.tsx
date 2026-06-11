@@ -1,12 +1,12 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { getTeam } from '@/data/teams';
 import { GROUP_MATCHES, KNOCKOUT_MATCHES, JORNADAS } from '@/data/matches';
 import { formatTime, isBettingOpen } from '@/lib/utils';
+import { useLiveScores } from '@/hooks/useLiveScores';
 import BetModal from './BetModal';
 import type { League, Match, Bet } from '@/types';
-import type { LiveScoresMap } from '@/app/api/live/route';
 
 interface GamesTabProps {
   league: League;
@@ -28,20 +28,7 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
   const [selectedGroup, setSelectedGroup] = useState('A');
   const [viewMode, setViewMode] = useState<ViewMode>(league.matchPhase === 'cup' ? 'rounds' : 'rounds');
   const [activeBetMatch, setActiveBetMatch] = useState<Match | null>(null);
-  const [liveScores, setLiveScores] = useState<LiveScoresMap>({});
-
-  // Poll live scores every 60 s
-  useEffect(() => {
-    async function fetchScores() {
-      try {
-        const res = await fetch('/api/live');
-        if (res.ok) setLiveScores(await res.json());
-      } catch {}
-    }
-    fetchScores();
-    const iv = setInterval(fetchScores, 60_000);
-    return () => clearInterval(iv);
-  }, []);
+  const liveScores = useLiveScores();
 
   // Build rounds/filters based on league type
   const rounds = useMemo(() => {
