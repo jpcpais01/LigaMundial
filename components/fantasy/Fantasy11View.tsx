@@ -12,7 +12,8 @@ import { useFantasyStats } from '@/hooks/useFantasyStats';
 import { getFantasySquad, saveFantasySquad } from '@/lib/firestore';
 import { formatMatchDate, timeUntil } from '@/lib/utils';
 import {
-  FANTASY_WEEKS, FANTASY_BUDGET, SQUAD_RULES, getWeek, isWeekLocked, getDefaultWeekId,
+  FANTASY_WEEKS, FANTASY_BUDGET, SQUAD_RULES, FORMATIONS, DEFAULT_FORMATION_ID, getFormation,
+  getWeek, isWeekLocked, getDefaultWeekId,
   scoringMatchesOfWeek, countPositions, squadCost, validateSquad, computeSquadWeekPoints,
   playerMatchPoints, formatValue, teamsWithoutMatchInWeek,
 } from '@/lib/fantasy';
@@ -43,13 +44,14 @@ interface Draft {
   starters: string[];
   bench: (string | null)[]; // 5 posições; [0] = GR
   captainId: string | null;
+  formation: string;
 }
 
 type MarketCtx =
   | { kind: 'start'; position: FantasyPosition }
   | { kind: 'bench'; index: number };
 
-const EMPTY_DRAFT: Draft = { starters: [], bench: [null, null, null, null, null], captainId: null };
+const EMPTY_DRAFT: Draft = { starters: [], bench: [null, null, null, null, null], captainId: null, formation: DEFAULT_FORMATION_ID };
 
 const ROW_CONFIG: { pos: FantasyPosition; min: number; max: number }[] = [
   { pos: 'FWD', min: SQUAD_RULES.fwdMin, max: SQUAD_RULES.fwdMax },
@@ -96,6 +98,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
             starters: [...squad.starters],
             bench: [...squad.bench, ...Array(5).fill(null)].slice(0, 5),
             captainId: squad.captainId,
+            formation: squad.formation ?? DEFAULT_FORMATION_ID,
           }
         : { ...EMPTY_DRAFT, bench: [...EMPTY_DRAFT.bench] },
     }));
@@ -166,11 +169,12 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
     if (locked || !draft) return null;
     const counts = countPositions(draft.starters, byId);
 
-    // Default formation 1-4-4-2: always show exactly 11 total slots (filled + empty).
-    // Empty slots per row = max(mandatory minimum, default-target residual).
+    // Always show exactly 11 total slots (filled + empty) using the chosen formation.
+    // Empty slots per row = max(mandatory minimum, formation-target residual).
     // If the sum exceeds the remaining budget (can happen when a position is over-filled
-    // beyond its default target), trim slack from FWD → MID → DEF, never below mandatory.
-    const DEFAULT_TARGETS: Record<FantasyPosition, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+    // beyond its formation target), trim slack from FWD → MID → DEF, never below mandatory.
+    const f = getFormation(draft.formation);
+    const DEFAULT_TARGETS: Record<FantasyPosition, number> = { GK: 1, DEF: f.DEF, MID: f.MID, FWD: f.FWD };
     const budget = SQUAD_RULES.starters - draft.starters.length;
     const emptyPerPos: Partial<Record<FantasyPosition, number>> = {};
     for (const cfg of ROW_CONFIG) {
@@ -415,7 +419,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
   const handleSave = async () => {
     if (!draft) return;
     const benchClean = draft.bench.filter((x): x is string => !!x);
-    const errs = validateSquad(draft.starters, benchClean, draft.captainId, byId);
+    const errs = validateSquad(draft.starters, benchClean, draft.captainId, byId, draft.formation);
     setErrors(errs);
     if (errs.length > 0) return;
     setSaving(true);
@@ -427,13 +431,14 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
         starters: draft.starters,
         bench: benchClean,
         captainId: draft.captainId,
+        formation: draft.formation,
         totalCost: cost,
       };
       await saveFantasySquad(data);
       const now = new Date().toISOString();
       setSquads(prev => ({
         ...prev,
-        [weekId]: { ...data, id: `${weekId}_${username}`, createdAt: prev[weekId]?.createdAt ?? now, updatedAt: now },
+        [weekId]: { ...data, id: `${weekId}_${username}`, formation: draft.formation, createdAt: prev[weekId]?.createdAt ?? now, updatedAt: now },
       }));
       setDirtyWeeks(prev => { const n = new Set(prev); n.delete(weekId); return n; });
       setSavedFlash(true);
@@ -457,6 +462,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
       starters: [...prev.starters],
       bench: [...prev.bench, ...Array(5).fill(null)].slice(0, 5),
       captainId: prev.captainId,
+      formation: prev.formation ?? DEFAULT_FORMATION_ID,
     }));
   };
 
@@ -553,6 +559,35 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
                   <span className="text-white/25 text-[10px]">{draftAll.length}/16 jogadores</span>
                   <span className="text-white/25 text-[10px]">{formatValue(cost)} / {formatValue(FANTASY_BUDGET)}</span>
                 </div>
+                {/* Formation picker */}
+                {draft && (
+                  <div className="flex items-center gap-2 mt-3 pt-2.5 border-t border-white/6">
+                    <span className="text-[10px] font-medium uppercase tracking-[0.12em] text-white/30 flex-shrink-0">Form.</span>
+                    <div className="flex gap-1.5">
+                      {FORMATIONS.map(fm => (
+                        <button
+                          key={fm.id}
+                          onClick={() => {
+                            if (fm.id === draft.formation) return;
+                            updateDraft(d => ({
+                              ...d,
+                              formation: fm.id,
+                              starters: [],
+                              captainId: null,
+                            }));
+                          }}
+                          className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all ${
+                            draft.formation === fm.id
+                              ? 'bg-cyan-400 text-black'
+                              : 'bg-white/6 text-white/35 border border-white/10 active:bg-white/12'
+                          }`}
+                        >
+                          {fm.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

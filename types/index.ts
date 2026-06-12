@@ -135,6 +135,7 @@ export interface FantasySquad {
   starters: string[];      // 11 ids
   bench: string[];         // 5 ids — bench[0] é sempre GK; ordem = prioridade de substituição
   captainId: string | null;
+  formation: string;       // '442' | '433' | '352' | '451' | '343'
   totalCost: number;       // M€
   createdAt: string;
   updatedAt: string;

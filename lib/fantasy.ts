@@ -22,6 +22,20 @@ export const SQUAD_RULES = {
   maxPerTeam: 4,
 } as const;
 
+// ─── FORMAÇÕES ────────────────────────────────────────────────────────────────
+export const FORMATIONS = [
+  { id: '442', label: '4-4-2', DEF: 4, MID: 4, FWD: 2 },
+  { id: '433', label: '4-3-3', DEF: 4, MID: 3, FWD: 3 },
+  { id: '352', label: '3-5-2', DEF: 3, MID: 5, FWD: 2 },
+  { id: '451', label: '4-5-1', DEF: 4, MID: 5, FWD: 1 },
+  { id: '343', label: '3-4-3', DEF: 3, MID: 4, FWD: 3 },
+] as const;
+
+export type FormationId = (typeof FORMATIONS)[number]['id'];
+export const DEFAULT_FORMATION_ID: FormationId = '442';
+export const getFormation = (id: string) =>
+  FORMATIONS.find(f => f.id === id) ?? FORMATIONS[0];
+
 // ─── JORNADAS ─────────────────────────────────────────────────────────────────
 export interface FantasyWeek {
   id: string;
@@ -95,7 +109,9 @@ export function squadCost(ids: string[], byId: Record<string, FantasyPlayer>): n
 export function validateSquad(
   starters: string[], bench: string[], captainId: string | null,
   byId: Record<string, FantasyPlayer>,
+  formationId: string = DEFAULT_FORMATION_ID,
 ): string[] {
+  const formation = getFormation(formationId);
   const errors: string[] = [];
   const all = [...starters, ...bench];
 
@@ -106,9 +122,9 @@ export function validateSquad(
   const sc = countPositions(starters, byId);
   if (starters.length === SQUAD_RULES.starters) {
     if (sc.GK !== SQUAD_RULES.gk) errors.push('Os titulares têm de incluir exactamente 1 guarda-redes.');
-    if (sc.DEF < SQUAD_RULES.defMin || sc.DEF > SQUAD_RULES.defMax) errors.push(`Defesas titulares: entre ${SQUAD_RULES.defMin} e ${SQUAD_RULES.defMax}.`);
-    if (sc.MID < SQUAD_RULES.midMin || sc.MID > SQUAD_RULES.midMax) errors.push(`Médios titulares: entre ${SQUAD_RULES.midMin} e ${SQUAD_RULES.midMax}.`);
-    if (sc.FWD < SQUAD_RULES.fwdMin || sc.FWD > SQUAD_RULES.fwdMax) errors.push(`Avançados titulares: entre ${SQUAD_RULES.fwdMin} e ${SQUAD_RULES.fwdMax}.`);
+    if (sc.DEF !== formation.DEF) errors.push(`Formação ${formation.label}: precisas de ${formation.DEF} defesas (tens ${sc.DEF}).`);
+    if (sc.MID !== formation.MID) errors.push(`Formação ${formation.label}: precisas de ${formation.MID} médios (tens ${sc.MID}).`);
+    if (sc.FWD !== formation.FWD) errors.push(`Formação ${formation.label}: precisas de ${formation.FWD} avançados (tens ${sc.FWD}).`);
   }
 
   const bc = countPositions(bench, byId);
