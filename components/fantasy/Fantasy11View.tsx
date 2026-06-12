@@ -165,7 +165,27 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
   const editSlots = useMemo((): { rows: PitchSlot[][]; bench: PitchSlot[] } | null => {
     if (locked || !draft) return null;
     const counts = countPositions(draft.starters, byId);
-    const mandatoryRemaining = ROW_CONFIG.reduce((s, r) => s + Math.max(r.min - counts[r.pos], 0), 0);
+
+    // Default formation 1-4-4-2: always show exactly 11 total slots (filled + empty).
+    // Empty slots per row = max(mandatory minimum, default-target residual).
+    // If the sum exceeds the remaining budget (can happen when a position is over-filled
+    // beyond its default target), trim slack from FWD → MID → DEF, never below mandatory.
+    const DEFAULT_TARGETS: Record<FantasyPosition, number> = { GK: 1, DEF: 4, MID: 4, FWD: 2 };
+    const budget = SQUAD_RULES.starters - draft.starters.length;
+    const emptyPerPos: Partial<Record<FantasyPosition, number>> = {};
+    for (const cfg of ROW_CONFIG) {
+      const filled = counts[cfg.pos];
+      emptyPerPos[cfg.pos] = Math.max(cfg.min - filled, 0, DEFAULT_TARGETS[cfg.pos] - filled);
+    }
+    let total = (Object.values(emptyPerPos) as number[]).reduce((s, v) => s + v, 0);
+    for (const cfg of ROW_CONFIG) { // [FWD, MID, DEF, GK] — trim least-critical first
+      if (total <= budget) break;
+      const mandatory = Math.max(cfg.min - counts[cfg.pos], 0);
+      const cut = Math.min((emptyPerPos[cfg.pos] ?? 0) - mandatory, total - budget);
+      (emptyPerPos[cfg.pos] as number) -= cut;
+      total -= cut;
+    }
+
     const rows = ROW_CONFIG.map(cfg => {
       const ids = draft.starters.filter(id => byId[id]?.position === cfg.pos);
       const slots: PitchSlot[] = ids.map(id => ({
@@ -176,11 +196,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
         badge: formatValue(byId[id].value),
         badgeTone: 'value' as const,
       }));
-      const mandatory = Math.max(cfg.min - ids.length, 0);
-      const optional =
-        ids.length >= cfg.min && ids.length < cfg.max &&
-        draft.starters.length + mandatoryRemaining < SQUAD_RULES.starters ? 1 : 0;
-      for (let i = 0; i < mandatory + optional; i++) {
+      for (let i = 0; i < (emptyPerPos[cfg.pos] ?? 0); i++) {
         slots.push({ key: `${cfg.pos}-empty-${i}`, player: null, position: cfg.pos });
       }
       return slots;
