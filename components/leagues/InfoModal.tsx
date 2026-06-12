@@ -20,6 +20,7 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
   const isRegular = league.type === 'regular';
   const isChampion = league.type === 'champion';
   const isScorer = league.type === 'scorer';
+  const isFantasy = league.type === 'fantasy';
   const prizes = league.prizeDistribution;
 
   return (
@@ -97,6 +98,50 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
                   <p className="text-white/30 text-xs mt-3 px-1">
                     Máximo de 4 pontos por jogo (resultado exacto + 1X2 correcto).
                   </p>
+                </div>
+              )}
+
+              {isFantasy && (
+                <div className="mb-6">
+                  <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
+                    Como funciona
+                  </p>
+                  <div className="bg-white/4 rounded-2xl px-4 py-4 border border-white/6 mb-3">
+                    <p className="text-white/70 text-sm leading-relaxed">
+                      Em cada jornada tens <span className="text-cyan-300 font-semibold">1.000M€</span> para
+                      montar uma equipa com <span className="text-white font-semibold">11 titulares</span> e{' '}
+                      <span className="text-white font-semibold">5 suplentes</span> — jogadores reais do Mundial
+                      com valores de mercado reais. Máximo de 4 jogadores da mesma selecção.
+                      A equipa fecha 5 minutos antes do primeiro jogo da jornada.
+                      Titulares que não joguem são substituídos automaticamente pelos suplentes, por ordem.
+                    </p>
+                  </div>
+                  <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
+                    Sistema de Pontuação
+                  </p>
+                  <div className="bg-white/4 rounded-2xl px-4 py-3 border border-white/6 space-y-2">
+                    {[
+                      ['Jogar de início', '+2'],
+                      ['Entrar como suplente', '+1'],
+                      ['Golo (GR / Defesa)', '+6'],
+                      ['Golo (Médio)', '+5'],
+                      ['Golo (Avançado)', '+4'],
+                      ['Assistência', '+3'],
+                      ['Baliza a zeros (GR / Defesa)', '+4'],
+                      ['Baliza a zeros (Médio)', '+1'],
+                      ['Cada 3 defesas do GR', '+1'],
+                      ['Cada 2 golos sofridos (GR / Defesa)', '−1'],
+                      ['Cartão amarelo', '−1'],
+                      ['Cartão vermelho', '−3'],
+                      ['Autogolo', '−2'],
+                      ['Capitão', '×2'],
+                    ].map(([label, pts]) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-white/60 text-[13px]">{label}</span>
+                        <span className={`font-bold text-[13px] ${pts.startsWith('−') ? 'text-red-400' : pts === '×2' ? 'text-gold' : 'text-white'}`}>{pts}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 

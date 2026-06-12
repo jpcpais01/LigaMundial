@@ -28,6 +28,7 @@ export default function LigasPage() {
   }, []);
 
   const generalLeagues = LEAGUES.filter(l => l.id === 'fase-grupos' || l.id === 'fase-copa');
+  const fantasyLeagues = LEAGUES.filter(l => l.type === 'fantasy');
   const extraLeagues = LEAGUES.filter(l => l.id.startsWith('extra'));
 
   return (
@@ -56,6 +57,25 @@ export default function LigasPage() {
         </div>
       </section>
 
+      {/* Fantasy */}
+      <section className="px-4 mb-7">
+        <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
+          Fantasy
+        </p>
+        <div className="space-y-3">
+          {fantasyLeagues.map((l, i) => (
+            <LeagueCard
+              key={l.id}
+              league={l}
+              memberCount={memberCounts[l.id] || 0}
+              isJoined={user?.joinedLeagues.includes(l.id) || false}
+              index={i + 2}
+              backgroundUrl={leagueConfigs[l.id]?.backgroundUrl}
+            />
+          ))}
+        </div>
+      </section>
+
       {/* Extra leagues */}
       <section className="px-4 mb-6">
         <p className="text-[11px] font-medium uppercase tracking-[0.15em] text-white/30 mb-3">
@@ -68,7 +88,7 @@ export default function LigasPage() {
               league={l}
               memberCount={memberCounts[l.id] || 0}
               isJoined={user?.joinedLeagues.includes(l.id) || false}
-              index={i + 2}
+              index={i + 3}
               backgroundUrl={leagueConfigs[l.id]?.backgroundUrl}
             />
           ))}

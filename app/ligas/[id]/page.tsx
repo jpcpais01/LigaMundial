@@ -10,6 +10,7 @@ import { joinLeague, leaveLeague, getLeagueMembers, getUserBetsForLeague, getUse
 import GamesTab from '@/components/leagues/GamesTab';
 import LeaderboardTab from '@/components/leagues/LeaderboardTab';
 import SpecialBetView from '@/components/leagues/SpecialBetView';
+import Fantasy11View from '@/components/fantasy/Fantasy11View';
 import InfoModal from '@/components/leagues/InfoModal';
 import { getInitials } from '@/lib/utils';
 import type { Bet, User } from '@/types';
@@ -19,6 +20,7 @@ type Tab = 'jogos' | 'classificacao';
 const ACCENT: Record<string, string> = {
   'fase-grupos':    '#3b82f6',
   'fase-copa':      '#a78bfa',
+  'fantasy-11':     '#22d3ee',
   'extra-jornadas': '#34d399',
   'extra-campeao':  '#fbbf24',
   'extra-marcador': '#fb7185',
@@ -270,8 +272,20 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
         </AnimatePresence>
       )}
 
-      {/* Special leagues */}
-      {isSpecial ? (
+      {/* Fantasy league */}
+      {league.type === 'fantasy' ? (
+        loading ? (
+          <div className="flex justify-center py-16">
+            <Loader2 size={22} className="animate-spin text-white/20" />
+          </div>
+        ) : joined && user ? (
+          <Fantasy11View league={league} username={user.username} totalMembers={memberCount} />
+        ) : (
+          <div className="text-center px-8 py-10 text-white/25 text-sm">
+            Inscreve-te para montares o teu onze.
+          </div>
+        )
+      ) : isSpecial ? (
         loading ? (
           <div className="flex justify-center py-16">
             <Loader2 size={22} className="animate-spin text-white/20" />

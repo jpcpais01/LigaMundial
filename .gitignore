@@ -33,3 +33,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# artefactos do gerador de jogadores fantasy
+scripts/.photo-cache.json
+scripts/fetch-players.log

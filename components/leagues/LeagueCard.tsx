@@ -33,6 +33,13 @@ const VISUALS: Record<string, {
     label: 'Geral',
     pattern: `repeating-linear-gradient(-45deg, transparent, transparent 14px, rgba(255,255,255,0.025) 14px, rgba(255,255,255,0.025) 15px)`,
   },
+  'fantasy-11': {
+    bg: 'linear-gradient(135deg, #062a2e 0%, #04161a 100%)',
+    accent: '#22d3ee',
+    label: 'Fantasy',
+    pattern: `repeating-linear-gradient(60deg, transparent, transparent 22px, rgba(34,211,238,0.04) 22px, rgba(34,211,238,0.04) 23px),
+              repeating-linear-gradient(-60deg, transparent, transparent 22px, rgba(255,255,255,0.025) 22px, rgba(255,255,255,0.025) 23px)`,
+  },
   'extra-jornadas': {
     bg: 'linear-gradient(135deg, #0c2e1a 0%, #081a0e 100%)',
     accent: '#34d399',

@@ -38,6 +38,18 @@ export const LEAGUES: League[] = [
     color: 'from-emerald-600 to-emerald-900',
   },
   {
+    id: 'fantasy-11',
+    name: 'Fantasy 11',
+    subtitle: 'O teu onze ideal',
+    description: 'Em cada jornada tens 1.000M€ para montar o teu onze ideal com 11 titulares e 5 suplentes — jogadores reais do Mundial. Ganhas pontos com golos, assistências, balizas a zeros, defesas e mais. O capitão pontua a dobrar.',
+    type: 'fantasy',
+    entryFee: 10,
+    prizeDistribution: { first: 60, second: 30, third: 10 },
+    matchPhase: 'all',
+    icon: '⭐',
+    color: 'from-cyan-600 to-cyan-900',
+  },
+  {
     id: 'extra-campeao',
     name: 'Extra — Campeão',
     subtitle: 'Qual a selecção campeã?',

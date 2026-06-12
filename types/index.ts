@@ -22,9 +22,10 @@ export type LeagueId =
   | 'fase-copa'
   | 'extra-jornadas'
   | 'extra-campeao'
-  | 'extra-marcador';
+  | 'extra-marcador'
+  | 'fantasy-11';
 
-export type LeagueType = 'regular' | 'champion' | 'scorer';
+export type LeagueType = 'regular' | 'champion' | 'scorer' | 'fantasy';
 
 export interface PrizeDistribution {
   first: number;
@@ -109,6 +110,59 @@ export interface MatchResult {
   // 'auto' = liquidado automaticamente pela API; 'admin' (ou ausente) = manual.
   // Resultados manuais nunca são substituídos pela liquidação automática.
   source?: 'auto' | 'admin';
+}
+
+// ─── FANTASY 11 ──────────────────────────────────────────────────────────────
+export type FantasyPosition = 'GK' | 'DEF' | 'MID' | 'FWD';
+
+export interface FantasyPlayer {
+  id: string;              // ESPN athlete id
+  name: string;
+  teamId: string;          // id interno da selecção
+  position: FantasyPosition;
+  value: number;           // valor de mercado em M€
+  age?: number | null;
+  jersey?: string | null;
+  photo?: string | null;   // URL da foto real (TheSportsDB)
+}
+
+// Equipa de um utilizador para uma jornada
+export interface FantasySquad {
+  id: string;              // `${weekId}_${username}`
+  leagueId: string;        // 'fantasy-11'
+  username: string;
+  weekId: string;          // 'j1' … 'j8'
+  starters: string[];      // 11 ids
+  bench: string[];         // 5 ids — bench[0] é sempre GK; ordem = prioridade de substituição
+  captainId: string | null;
+  totalCost: number;       // M€
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Linha de estatísticas de um jogador num jogo (fonte: ESPN)
+export interface PlayerStatLine {
+  teamId: string;
+  started: boolean;
+  subbedIn: boolean;
+  subbedOut: boolean;
+  goals: number;
+  assists: number;
+  saves: number;
+  yellow: number;
+  red: number;
+  ownGoals: number;
+}
+
+// Estatísticas de todos os jogadores de um jogo
+export interface MatchPlayerStats {
+  matchId: string;
+  espnEventId: string;
+  homeScore: number;
+  awayScore: number;
+  status: 'live' | 'finished';
+  players: Record<string, PlayerStatLine>; // por id de jogador
+  updatedAt: string;
 }
 
 // ─── MEMBRO DA LIGA ──────────────────────────────────────────────────────────

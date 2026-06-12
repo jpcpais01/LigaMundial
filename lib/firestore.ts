@@ -222,6 +222,51 @@ export async function getUsersByUsernames(usernames: string[]): Promise<import('
   return snaps.filter(d => d.exists()).map(d => d.data() as import('@/types').User);
 }
 
+// ─── FANTASY 11 ───────────────────────────────────────────────────────────────
+// As regras do Firestore só permitem escrita nas colecções existentes, por isso
+// as equipas fantasy vivem na colecção `leagueMembers` com ids `fsquad_*` e um
+// leagueId com sufixo `#squads` — assim nunca aparecem nas queries de membros
+// (que usam sempre os ids exactos das ligas).
+const fantasySquadLeagueKey = (leagueId: string) => `${leagueId}#squads`;
+const fantasySquadDocId = (weekId: string, username: string) => `fsquad_${weekId}_${username}`;
+
+export async function saveFantasySquad(
+  squad: Omit<import('@/types').FantasySquad, 'id' | 'createdAt' | 'updatedAt'>,
+): Promise<void> {
+  const id = `${squad.weekId}_${squad.username}`;
+  const now = new Date().toISOString();
+  const ref = doc(db, 'leagueMembers', fantasySquadDocId(squad.weekId, squad.username));
+  const data = { ...squad, leagueId: fantasySquadLeagueKey(squad.leagueId), id };
+  const existing = await getDoc(ref);
+  if (existing.exists()) {
+    await updateDoc(ref, { ...data, updatedAt: now });
+  } else {
+    await setDoc(ref, { ...data, createdAt: now, updatedAt: now });
+  }
+}
+
+function squadFromDoc(data: Record<string, unknown>): import('@/types').FantasySquad {
+  const squad = data as unknown as import('@/types').FantasySquad;
+  // repõe o leagueId original (sem o sufixo #squads)
+  return { ...squad, leagueId: String(squad.leagueId).replace(/#squads$/, '') };
+}
+
+export async function getFantasySquad(
+  weekId: string, username: string,
+): Promise<import('@/types').FantasySquad | null> {
+  const snap = await getDoc(doc(db, 'leagueMembers', fantasySquadDocId(weekId, username)));
+  if (!snap.exists()) return null;
+  return squadFromDoc(snap.data());
+}
+
+export async function getAllFantasySquads(
+  leagueId: string,
+): Promise<import('@/types').FantasySquad[]> {
+  const q = query(collection(db, 'leagueMembers'), where('leagueId', '==', fantasySquadLeagueKey(leagueId)));
+  const snaps = await getDocs(q);
+  return snaps.docs.map(d => squadFromDoc(d.data()));
+}
+
 // ─── RESULTADOS DOS JOGOS (admin) ─────────────────────────────────────────────
 export async function setMatchResult(result: MatchResult): Promise<void> {
   await setDoc(doc(db, 'results', result.matchId), result);
