@@ -31,7 +31,7 @@ export const LEAGUES: League[] = [
     subtitle: 'Liga por Jornada',
     description: 'A classificação reinicia a cada jornada. 3 jornadas na fase de grupos, depois cada ronda da fase a eliminar conta como uma jornada. As apostas feitas nas ligas Fase de Grupos e Fase de Taça são copiadas automaticamente para aqui.',
     type: 'regular',
-    entryFee: 10,
+    entryFee: 5,
     prizeDistribution: { first: 60, second: 30, third: 10 },
     matchPhase: 'all',
     icon: '🔄',
