@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { LogIn } from 'lucide-react';
 import Link from 'next/link';
@@ -7,6 +7,7 @@ import { useAuthContext } from '@/components/auth/AuthContext';
 import HeroLiveMatch from '@/components/home/HeroLiveMatch';
 import NewsSection from '@/components/home/NewsSection';
 import UpcomingMatches from '@/components/home/UpcomingMatches';
+import WorldCupCelebration from '@/components/home/WorldCupCelebration';
 import { getInitials } from '@/lib/utils';
 import { TOURNAMENT_START } from '@/data/matches';
 
@@ -15,6 +16,19 @@ const TOURNAMENT_DAYS = 39; // 11 Jun – 19 Jul
 export default function HomePage() {
   const { user, loading, setShowAuthModal } = useAuthContext();
   const [subtitle, setSubtitle] = useState('FIFA World Cup 2026');
+
+  // Easter egg 🥚: tap the title 3× quickly to trigger a World Cup celebration
+  const [celebrate, setCelebrate] = useState(false);
+  const tapsRef = useRef<number[]>([]);
+  const handleTitleTap = () => {
+    const now = Date.now();
+    tapsRef.current = [...tapsRef.current, now].filter(t => now - t < 1200);
+    if (tapsRef.current.length >= 3) {
+      tapsRef.current = [];
+      if (navigator.vibrate) navigator.vibrate([18, 40, 18]);
+      setCelebrate(true);
+    }
+  };
 
   // Calculado no cliente para evitar divergência de hidratação à meia-noite
   useEffect(() => {
@@ -27,7 +41,12 @@ export default function HomePage() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 pt-6 pb-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight text-white">LigaMundial</h1>
+          <h1
+            onClick={handleTitleTap}
+            className="text-2xl font-black tracking-tight text-white cursor-pointer select-none active:scale-[0.97] transition-transform"
+          >
+            LigaMundial
+          </h1>
           <p className="text-white/30 text-xs mt-0.5 font-medium tracking-wide">{subtitle}</p>
         </div>
 
@@ -69,6 +88,9 @@ export default function HomePage() {
 
       {/* Next 10 matches */}
       <UpcomingMatches />
+
+      {/* Surprise 🎉 — hidden celebration triggered by triple-tapping the title */}
+      <WorldCupCelebration show={celebrate} onDone={() => setCelebrate(false)} />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { getTeam } from '@/data/teams';
 import { GROUP_MATCHES, KNOCKOUT_MATCHES, JORNADAS } from '@/data/matches';
@@ -56,6 +57,20 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
     const ids = new Set(rounds[selectedRound]?.matchIds || []);
     return allMatches.filter(m => ids.has(m.id));
   }, [allMatches, rounds, selectedRound]);
+
+  // Deep link: ?match=<id> coming from the featured game on the home page.
+  // Jump to the round that contains the match and open it automatically.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const matchId = searchParams.get('match');
+    if (!matchId) return;
+    const target = allMatches.find(m => m.id === matchId);
+    if (!target || target.homeTeamId === 'TBD') return;
+    const roundIndex = rounds.findIndex(r => r.matchIds.includes(matchId));
+    if (roundIndex >= 0) setSelectedRound(roundIndex);
+    setActiveBetMatch(target);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, allMatches, rounds]);
 
   const getBetForMatch = (matchId: string) =>
     bets.find(b => b.matchId === matchId) || null;

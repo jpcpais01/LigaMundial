@@ -77,7 +77,9 @@ export default function HeroLiveMatch() {
   const isFinished = live?.status === 'finished' || match.status === 'finished';
   const homeScore = live?.homeScore ?? match.homeScore;
   const awayScore = live?.awayScore ?? match.awayScore;
-  const leagueHref = match.phase === 'group' ? '/ligas/fase-grupos' : '/ligas/fase-copa';
+  const leagueHref = match.phase === 'group'
+    ? `/ligas/fase-grupos?match=${match.id}`
+    : `/ligas/fase-copa?match=${match.id}`;
 
   return (
     <motion.div
