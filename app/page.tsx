@@ -8,6 +8,7 @@ import HeroLiveMatch from '@/components/home/HeroLiveMatch';
 import NewsSection from '@/components/home/NewsSection';
 import UpcomingMatches from '@/components/home/UpcomingMatches';
 import WorldCupCelebration from '@/components/home/WorldCupCelebration';
+import PenaltyShootout from '@/components/home/PenaltyShootout';
 import { getInitials } from '@/lib/utils';
 import { TOURNAMENT_START } from '@/data/matches';
 
@@ -30,6 +31,19 @@ export default function HomePage() {
     }
   };
 
+  // Easter egg 🥚🥚: tap the subtitle 5× quickly to open the penalty shootout game
+  const [playGame, setPlayGame] = useState(false);
+  const subTapsRef = useRef<number[]>([]);
+  const handleSubtitleTap = () => {
+    const now = Date.now();
+    subTapsRef.current = [...subTapsRef.current, now].filter(t => now - t < 1500);
+    if (subTapsRef.current.length >= 5) {
+      subTapsRef.current = [];
+      if (navigator.vibrate) navigator.vibrate(30);
+      setPlayGame(true);
+    }
+  };
+
   // Calculado no cliente para evitar divergência de hidratação à meia-noite
   useEffect(() => {
     const day = Math.floor((Date.now() - new Date(TOURNAMENT_START).getTime()) / 86_400_000) + 1;
@@ -47,7 +61,12 @@ export default function HomePage() {
           >
             LigaMundial
           </h1>
-          <p className="text-white/30 text-xs mt-0.5 font-medium tracking-wide">{subtitle}</p>
+          <p
+            onClick={handleSubtitleTap}
+            className="text-white/30 text-xs mt-0.5 font-medium tracking-wide cursor-pointer select-none"
+          >
+            {subtitle}
+          </p>
         </div>
 
         {!loading && (
@@ -91,6 +110,9 @@ export default function HomePage() {
 
       {/* Surprise 🎉 — hidden celebration triggered by triple-tapping the title */}
       <WorldCupCelebration show={celebrate} onDone={() => setCelebrate(false)} />
+
+      {/* Surprise 🥅 — hidden penalty shootout triggered by tapping the subtitle 5× */}
+      <PenaltyShootout open={playGame} onClose={() => setPlayGame(false)} />
     </div>
   );
 }
