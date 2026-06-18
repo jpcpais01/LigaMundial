@@ -29,7 +29,7 @@ export const LEAGUES: League[] = [
     id: 'extra-jornadas',
     name: 'Extra — Jornadas',
     subtitle: 'Liga por Jornada',
-    description: 'A classificação reinicia a cada jornada. 3 jornadas na fase de grupos, depois cada ronda da fase a eliminar conta como uma jornada. As apostas feitas nas ligas Fase de Grupos e Fase de Taça são copiadas automaticamente para aqui.',
+    description: 'A classificação reinicia a cada jornada — cada jornada é uma competição própria, com inscrição (5€) e prémio (60/30/10) próprios. 3 jornadas na fase de grupos, depois cada ronda da fase a eliminar conta como uma jornada. As apostas feitas nas ligas Fase de Grupos e Fase de Taça são copiadas automaticamente para aqui.',
     type: 'regular',
     entryFee: 5,
     prizeDistribution: { first: 60, second: 30, third: 10 },

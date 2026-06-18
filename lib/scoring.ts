@@ -74,7 +74,7 @@ export function buildLeaderboard(
     e.rank = i + 1;
     if (i === 0) e.prizeMoney = totalPool * (prizeDistribution.first / 100);
     else if (i === 1 && prizeDistribution.second) e.prizeMoney = totalPool * (prizeDistribution.second / 100);
-    else if (i === 2 && prizeDistribution.third) e.prizeMoney = totalPool * (prizeDistribution.third / 100);
+    else if (i === 2 && prizeDistribution.third) e.prizeMoney = Math.floor(totalPool * (prizeDistribution.third / 100));
   });
 
   return entries;

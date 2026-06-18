@@ -1,12 +1,13 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Users, Trophy, Crown } from 'lucide-react';
 import { getAllBetsForLeague, getLeagueMembers, getAllResults } from '@/lib/firestore';
 import { buildLeaderboard } from '@/lib/scoring';
 import { getUser } from '@/lib/firestore';
 import { formatCurrency, getInitials } from '@/lib/utils';
-import type { League, LeaderboardEntry } from '@/types';
+import { JORNADAS } from '@/data/matches';
+import type { League, Bet, MatchResult, LeaderboardEntry } from '@/types';
 
 interface LeaderboardTabProps {
   league: League;
@@ -14,18 +15,23 @@ interface LeaderboardTabProps {
   totalMembers: number;
 }
 
+type Member = { username: string; avatarColor: string; avatarUrl?: string };
+
 const RANK_EMOJIS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
 export default function LeaderboardTab({ league, currentUsername, totalMembers }: LeaderboardTabProps) {
-  const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+  const isJornadas = league.id === 'extra-jornadas';
+  const [bets, setBets] = useState<Bet[]>([]);
+  const [results, setResults] = useState<Record<string, MatchResult>>({});
+  const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
-  const prizePool = totalMembers * league.entryFee;
+  const [selectedJornada, setSelectedJornada] = useState(0);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [members, bets, results] = await Promise.all([
+        const [rawMembers, rawBets, rawResults] = await Promise.all([
           getLeagueMembers(league.id),
           getAllBetsForLeague(league.id),
           getAllResults(),
@@ -33,14 +39,24 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
 
         // Enrich members with avatar color from user profiles
         const enriched = await Promise.all(
-          members.map(async m => {
+          rawMembers.map(async m => {
             const u = await getUser(m.username);
             return { username: m.username, avatarColor: u?.avatarColor || '#6366f1', avatarUrl: u?.avatarUrl };
           })
         );
 
-        const board = buildLeaderboard(bets, results, enriched, prizePool, league.prizeDistribution);
-        setEntries(board);
+        setMembers(enriched);
+        setBets(rawBets);
+        setResults(rawResults);
+
+        // Default to the most recent jornada that already has a result.
+        if (isJornadas) {
+          let def = 0;
+          for (let i = JORNADAS.length - 1; i >= 0; i--) {
+            if (JORNADAS[i].matchIds.some(id => rawResults[id])) { def = i; break; }
+          }
+          setSelectedJornada(def);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -48,7 +64,28 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
       }
     }
     load();
-  }, [league, prizePool]);
+  }, [league.id, isJornadas]);
+
+  // For "Extra — Jornadas" each jornada is its own competition: entry (and the
+  // pool) is per jornada, and only members who bet that jornada participate.
+  const { entries, prizePool } = useMemo(() => {
+    if (isJornadas) {
+      const ids = new Set(JORNADAS[selectedJornada]?.matchIds || []);
+      const jBets = bets.filter(b => ids.has(b.matchId));
+      const participants = new Set(jBets.map(b => b.username));
+      const jMembers = members.filter(m => participants.has(m.username));
+      const jPool = jMembers.length * league.entryFee;
+      return {
+        entries: buildLeaderboard(jBets, results, jMembers, jPool, league.prizeDistribution),
+        prizePool: jPool,
+      };
+    }
+    const pool = totalMembers * league.entryFee;
+    return {
+      entries: buildLeaderboard(bets, results, members, pool, league.prizeDistribution),
+      prizePool: pool,
+    };
+  }, [isJornadas, selectedJornada, bets, results, members, totalMembers, league.entryFee, league.prizeDistribution]);
 
   if (loading) {
     return (
@@ -58,26 +95,45 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
     );
   }
 
-  if (entries.length === 0) {
-    return (
-      <div className="flex flex-col items-center py-16 gap-3 text-center px-8">
-        <Users size={36} className="text-white/15" />
-        <p className="text-white/40 text-sm">Ainda não há jogadores registados nesta liga.</p>
-      </div>
-    );
-  }
-
   return (
     <div className="px-4 pb-4">
+      {/* Jornada selector — só na liga Extra — Jornadas */}
+      {isJornadas && (
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-3 -mx-1 px-1">
+          {JORNADAS.map((j, i) => (
+            <button
+              key={j.id}
+              onClick={() => setSelectedJornada(i)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full text-xs font-semibold transition-all ${
+                selectedJornada === i ? 'bg-gold text-black' : 'bg-white/5 text-white/50 hover:text-white/70'
+              }`}
+            >
+              {j.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Prize pool info */}
       <div className="flex items-center justify-between bg-white/4 rounded-2xl p-3.5 mb-4 border border-white/8">
         <div className="flex items-center gap-2">
           <Trophy size={16} className="text-gold" />
-          <span className="text-white/60 text-xs">Prémio Total</span>
+          <span className="text-white/60 text-xs">{isJornadas ? 'Prémio da Jornada' : 'Prémio Total'}</span>
         </div>
         <span className="text-gold font-bold">{formatCurrency(prizePool)}</span>
       </div>
 
+      {entries.length === 0 ? (
+        <div className="flex flex-col items-center py-16 gap-3 text-center px-8">
+          <Users size={36} className="text-white/15" />
+          <p className="text-white/40 text-sm">
+            {isJornadas
+              ? 'Ainda ninguém apostou nesta jornada.'
+              : 'Ainda não há jogadores registados nesta liga.'}
+          </p>
+        </div>
+      ) : (
+        <>
       {/* Top 3 podium */}
       {entries.length >= 3 && (
         <div className="flex items-end justify-center gap-2 mb-6 mt-2" style={{ minHeight: '200px' }}>
@@ -151,6 +207,8 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
           );
         })}
       </div>
+        </>
+      )}
     </div>
   );
 }
