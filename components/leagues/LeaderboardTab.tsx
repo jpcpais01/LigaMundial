@@ -7,19 +7,21 @@ import { buildLeaderboard } from '@/lib/scoring';
 import { getUser } from '@/lib/firestore';
 import { formatCurrency, getInitials } from '@/lib/utils';
 import { JORNADAS } from '@/data/matches';
+import LeagueStats from './LeagueStats';
 import type { League, Bet, MatchResult, LeaderboardEntry } from '@/types';
 
 interface LeaderboardTabProps {
   league: League;
   currentUsername: string;
   totalMembers: number;
+  accent: string;
 }
 
 type Member = { username: string; avatarColor: string; avatarUrl?: string };
 
 const RANK_EMOJIS: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' };
 
-export default function LeaderboardTab({ league, currentUsername, totalMembers }: LeaderboardTabProps) {
+export default function LeaderboardTab({ league, currentUsername, totalMembers, accent }: LeaderboardTabProps) {
   const isJornadas = league.id === 'extra-jornadas';
   const [bets, setBets] = useState<Bet[]>([]);
   const [results, setResults] = useState<Record<string, MatchResult>>({});
@@ -68,7 +70,7 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
 
   // For "Extra — Jornadas" each jornada is its own competition: entry (and the
   // pool) is per jornada, and only members who bet that jornada participate.
-  const { entries, prizePool } = useMemo(() => {
+  const { entries, prizePool, scopedBets, scopedMembers } = useMemo(() => {
     if (isJornadas) {
       const ids = new Set(JORNADAS[selectedJornada]?.matchIds || []);
       const jBets = bets.filter(b => ids.has(b.matchId));
@@ -78,12 +80,16 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
       return {
         entries: buildLeaderboard(jBets, results, jMembers, jPool, league.prizeDistribution),
         prizePool: jPool,
+        scopedBets: jBets,
+        scopedMembers: jMembers,
       };
     }
     const pool = totalMembers * league.entryFee;
     return {
       entries: buildLeaderboard(bets, results, members, pool, league.prizeDistribution),
       prizePool: pool,
+      scopedBets: bets,
+      scopedMembers: members,
     };
   }, [isJornadas, selectedJornada, bets, results, members, totalMembers, league.entryFee, league.prizeDistribution]);
 
@@ -207,6 +213,15 @@ export default function LeaderboardTab({ league, currentUsername, totalMembers }
           );
         })}
       </div>
+
+      {/* Estatísticas de desempenho */}
+      <LeagueStats
+        bets={scopedBets}
+        results={results}
+        members={scopedMembers}
+        currentUsername={currentUsername}
+        accent={accent}
+      />
         </>
       )}
     </div>

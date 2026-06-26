@@ -331,6 +331,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
               league={league}
               currentUsername={user?.username || ''}
               totalMembers={memberCount}
+              accent={accent}
             />
           )}
         </>
