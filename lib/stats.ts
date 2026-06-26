@@ -314,8 +314,8 @@ export function computeLeagueStats(
   const human = (r: BarRow | TendencyRow) => ({
     username: r.username, avatarColor: r.avatarColor, avatarUrl: r.avatarUrl,
   });
-  const realRows = <T extends { isGroup?: boolean; count: number }>(arr: T[], minN = 1) =>
-    arr.filter(r => !r.isGroup && r.count >= minN);
+  const realRows = <T extends { isGroup?: boolean; isReal?: boolean; count: number }>(arr: T[], minN = 1) =>
+    arr.filter(r => !r.isGroup && !r.isReal && r.count >= minN);
 
   const accR = realRows(accuracy, 2);
   if (accR.length) {
