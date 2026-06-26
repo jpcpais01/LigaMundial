@@ -114,9 +114,31 @@ export default function LeagueStats({ bets, results, members, currentUsername, a
         <Section
           icon={<Users size={15} />}
           title="Proximidade ao consenso"
-          subtitle="Quem aposta mais perto da média do grupo (menos golos de diferença = mais alinhado)"
+          subtitle="Quem aposta mais perto do palpite do grupo (menos golos de diferença = mais alinhado)"
         >
-          <ConformityChart rows={stats.conformity} accent={accent} />
+          <BarChart rows={stats.conformity} accent={accent} invert useDetail />
+        </Section>
+      )}
+
+      {/* Erro médio no placar (dados reais) */}
+      {stats.scoreError.length > 0 && (
+        <Section
+          icon={<Crosshair size={15} />}
+          title="Erro médio no placar"
+          subtitle="Golos de diferença entre o palpite e o resultado real · barra maior = mais perto · inclui o Consenso"
+        >
+          <BarChart rows={stats.scoreError} accent={accent} invert useDetail />
+        </Section>
+      )}
+
+      {/* Acertos contra o consenso */}
+      {stats.againstCrowd.length > 0 && (
+        <Section
+          icon={<Sparkles size={15} />}
+          title="Contra a corrente"
+          subtitle="Acertos no 1X2 quando o palpite foi contra o consenso do grupo"
+        >
+          <BarChart rows={stats.againstCrowd} accent={accent} useDetail />
         </Section>
       )}
 
@@ -195,14 +217,14 @@ function Legend({ color, label }: { color: string; label: string }) {
   );
 }
 
-function Avatar({ row, size = 24 }: { row: { username: string; avatarColor: string; avatarUrl?: string; isGroup?: boolean }; size?: number }) {
-  if (row.isGroup) {
+function Avatar({ row, size = 24 }: { row: { username: string; avatarColor: string; avatarUrl?: string; isGroup?: boolean; isReal?: boolean }; size?: number }) {
+  if (row.isGroup || row.isReal) {
     return (
       <div
         className="rounded-full flex items-center justify-center flex-shrink-0 text-black font-bold"
         style={{ width: size, height: size, backgroundColor: row.avatarColor, fontSize: size * 0.42 }}
       >
-        <Users size={size * 0.5} />
+        {row.isReal ? <Goal size={size * 0.5} /> : <Users size={size * 0.5} />}
       </div>
     );
   }
@@ -219,27 +241,21 @@ function Avatar({ row, size = 24 }: { row: { username: string; avatarColor: stri
 }
 
 function BarChart({
-  rows, max, suffix = '', decimals = 0, accent,
-}: { rows: BarRow[]; max?: number; suffix?: string; decimals?: number; accent: string }) {
+  rows, max, suffix = '', decimals = 0, accent, invert = false, useDetail = false,
+}: {
+  rows: BarRow[]; max?: number; suffix?: string; decimals?: number; accent: string;
+  invert?: boolean;     // valor menor = melhor → barra maior
+  useDetail?: boolean;  // mostra row.detail em vez do valor numérico
+}) {
   const top = max ?? Math.max(...rows.map(r => r.value), 0.0001);
   return (
     <div className="space-y-2.5">
       {rows.map((row, i) => {
-        const pct = top > 0 ? Math.min(100, (row.value / top) * 100) : 0;
-        return <Bar key={row.username} row={row} pct={pct} label={`${row.value.toFixed(decimals)}${suffix}`} delay={i * 0.03} accent={accent} />;
-      })}
-    </div>
-  );
-}
-
-function ConformityChart({ rows, accent }: { rows: BarRow[]; accent: string }) {
-  // Barra maior = mais próximo do consenso (menor distância).
-  const max = Math.max(...rows.map(r => r.value), 0.0001);
-  return (
-    <div className="space-y-2.5">
-      {rows.map((row, i) => {
-        const pct = max > 0 ? Math.max(8, (1 - row.value / max) * 100) : 100;
-        return <Bar key={row.username} row={row} pct={pct} label={`${row.value.toFixed(2)}`} delay={i * 0.03} accent={accent} />;
+        const pct = invert
+          ? (top > 0 ? Math.max(8, (1 - row.value / top) * 100) : 100)
+          : (top > 0 ? Math.min(100, (row.value / top) * 100) : 0);
+        const label = useDetail && row.detail ? row.detail : `${row.value.toFixed(decimals)}${suffix}`;
+        return <Bar key={row.username} row={row} pct={pct} label={label} delay={i * 0.03} accent={accent} />;
       })}
     </div>
   );
@@ -248,14 +264,15 @@ function ConformityChart({ rows, accent }: { rows: BarRow[]; accent: string }) {
 function Bar({
   row, pct, label, delay, accent,
 }: { row: BarRow; pct: number; label: string; delay: number; accent: string }) {
-  const color = row.isGroup ? '#FFD700' : row.isCurrent ? accent : '#ffffff';
+  const special = row.isGroup || row.isReal;
+  const color = special ? '#FFD700' : row.isCurrent ? accent : '#ffffff';
   return (
     <div className="flex items-center gap-2.5">
       <Avatar row={row} size={26} />
       <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between mb-1">
           <span className={`text-[11px] font-semibold truncate ${
-            row.isGroup ? 'text-gold' : row.isCurrent ? 'text-white' : 'text-white/70'
+            special ? 'text-gold' : row.isCurrent ? 'text-white' : 'text-white/70'
           }`}>
             {row.username}{row.isCurrent && ' (tu)'}
           </span>
@@ -264,7 +281,7 @@ function Bar({
         <div className="h-2 rounded-full bg-white/6 overflow-hidden">
           <motion.div
             className="h-full rounded-full"
-            style={{ backgroundColor: color, opacity: row.isGroup || row.isCurrent ? 1 : 0.4 }}
+            style={{ backgroundColor: color, opacity: special || row.isCurrent ? 1 : 0.4 }}
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
             transition={{ delay, duration: 0.5, ease: 'easeOut' }}

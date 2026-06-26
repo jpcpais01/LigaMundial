@@ -3,7 +3,8 @@ import { getOutcomeFromScore, calculateBetPoints } from './scoring';
 
 export type StatMember = { username: string; avatarColor: string; avatarUrl?: string };
 
-export const GROUP_LABEL = 'Consenso';
+export const GROUP_LABEL = 'Consenso'; // palpite agregado dos utilizadores
+export const REAL_LABEL = 'Real';      // dados reais dos jogos terminados
 
 export interface BarRow {
   username: string;
@@ -12,7 +13,8 @@ export interface BarRow {
   value: number;      // valor numérico principal
   detail?: string;    // legenda pequena (ex. "4/6")
   count: number;      // nº de jogos considerados
-  isGroup?: boolean;
+  isGroup?: boolean;  // linha do Consenso (palpite do grupo)
+  isReal?: boolean;   // linha baseada em dados reais dos jogos
   isCurrent?: boolean;
 }
 
@@ -47,9 +49,11 @@ export interface LeagueStats {
   exactRate: BarRow[];       // % resultados exactos (inclui Consenso)
   avgPoints: BarRow[];       // média de pontos por jogo
   conformity: BarRow[];      // proximidade ao consenso (valor = distância média em golos)
-  tendency: TendencyRow[];   // distribuição 1 / X / 2 (inclui média do grupo)
-  goals: BarRow[];           // média de golos previstos por jogo (inclui Consenso)
-  realGoalsAvg: number | null;
+  scoreError: BarRow[];      // erro médio do placar vs. resultado real (inclui Consenso)
+  againstCrowd: BarRow[];    // acertos 1X2 contra o consenso
+  tendency: TendencyRow[];   // distribuição 1 / X / 2 (inclui média da liga)
+  goals: BarRow[];           // média de golos previstos por jogo
+  realGoalsAvg: number | null; // média real de golos/jogo (linha "Real" no gráfico)
   superlatives: Superlative[];
 }
 
@@ -188,6 +192,67 @@ export function computeLeagueStats(
   // Menor distância = mais próximo do consenso → primeiro.
   conformity.sort((a, b) => a.value - b.value);
 
+  // ─── Erro médio do placar vs. resultado real ───────────────────────────────
+  // Distância de Manhattan entre o placar previsto e o placar REAL do jogo.
+  const scoreError: BarRow[] = [];
+  for (const m of members) {
+    const userBets = (betsByUser.get(m.username) ?? []).filter(
+      b => b.exactHome !== null && b.exactAway !== null && results[b.matchId],
+    );
+    if (userBets.length === 0) continue;
+    let err = 0;
+    for (const b of userBets) {
+      const r = results[b.matchId];
+      err += Math.abs((b.exactHome as number) - r.homeScore) + Math.abs((b.exactAway as number) - r.awayScore);
+    }
+    scoreError.push({
+      username: m.username, ...av(m.username), value: err / userBets.length,
+      detail: `${(err / userBets.length).toFixed(2)} golos`, count: userBets.length,
+      isCurrent: m.username === currentUsername,
+    });
+  }
+  // Linha "Consenso": erro do palpite do grupo vs. resultado real.
+  if (gradedMatches > 0) {
+    const ids = gradedMatchIds.filter(id => consensus.get(id)?.hasExact);
+    if (ids.length > 0) {
+      let cErr = 0;
+      for (const id of ids) {
+        const c = consensus.get(id)!;
+        const r = results[id];
+        cErr += Math.abs(c.home - r.homeScore) + Math.abs(c.away - r.awayScore);
+      }
+      scoreError.push({
+        username: GROUP_LABEL, avatarColor: groupColor, value: cErr / ids.length,
+        detail: `${(cErr / ids.length).toFixed(2)} golos`, count: ids.length, isGroup: true,
+      });
+    }
+  }
+  // Menor erro = melhor → primeiro.
+  scoreError.sort((a, b) => a.value - b.value);
+
+  // ─── Acertos contra o consenso ("contra a corrente") ───────────────────────
+  // Jogos terminados em que o 1X2 do utilizador diferiu do consenso e acertou.
+  const againstCrowd: BarRow[] = [];
+  for (const m of members) {
+    const userBets = (betsByUser.get(m.username) ?? []).filter(b => results[b.matchId]);
+    if (userBets.length === 0) continue;
+    let against = 0, correctAgainst = 0;
+    for (const b of userBets) {
+      const c = consensus.get(b.matchId);
+      if (!c || b.outcome === c.outcome) continue; // só conta quando discordou do grupo
+      against += 1;
+      const real = getOutcomeFromScore(results[b.matchId].homeScore, results[b.matchId].awayScore);
+      if (b.outcome === real) correctAgainst += 1;
+    }
+    if (against === 0) continue;
+    againstCrowd.push({
+      username: m.username, ...av(m.username), value: correctAgainst,
+      detail: `${correctAgainst}/${against}`, count: against,
+      isCurrent: m.username === currentUsername,
+    });
+  }
+  againstCrowd.sort((a, b) => b.value - a.value || b.count - a.count);
+
   // ─── Tendência 1 / X / 2 (sobre todas as apostas) ──────────────────────────
   const tendency: TendencyRow[] = [];
   const groupTally: Record<Outcome, number> = { home: 0, draw: 0, away: 0 };
@@ -238,8 +303,8 @@ export function computeLeagueStats(
     const totalReal = gradedMatchIds.reduce((s, id) => s + results[id].homeScore + results[id].awayScore, 0);
     realGoalsAvg = totalReal / gradedMatches;
     goals.push({
-      username: GROUP_LABEL, avatarColor: groupColor, value: realGoalsAvg,
-      detail: `${realGoalsAvg.toFixed(2)} reais/jogo`, count: gradedMatches, isGroup: true,
+      username: REAL_LABEL, avatarColor: groupColor, value: realGoalsAvg,
+      detail: `${realGoalsAvg.toFixed(2)} reais/jogo`, count: gradedMatches, isReal: true,
     });
     goals.sort((a, b) => b.value - a.value);
   }
@@ -286,6 +351,27 @@ export function computeLeagueStats(
       superlatives.push({ key: 'wall', emoji: '🧱', title: 'O Ferrolho', subtitle: 'Prevê menos golos',
         ...human(least), value: `${least.value.toFixed(1)}/jogo` });
     }
+    // Equilibrado: golos previstos mais próximos da média REAL dos jogos.
+    if (realGoalsAvg !== null) {
+      const balanced = goalsR.reduce((a, b) =>
+        Math.abs(b.value - realGoalsAvg!) < Math.abs(a.value - realGoalsAvg!) ? b : a);
+      superlatives.push({ key: 'balanced', emoji: '⚖️', title: 'O Equilibrado',
+        subtitle: 'Golos/jogo mais perto da média real', ...human(balanced),
+        value: `${balanced.value.toFixed(1)}/jogo` });
+    }
+  }
+  const scoreR = realRows(scoreError, 2);
+  if (scoreR.length) {
+    const sharp = scoreR.reduce((a, b) => (b.value < a.value ? b : a));
+    superlatives.push({ key: 'clinic', emoji: '🩺', title: 'O Olho Clínico',
+      subtitle: 'Menor erro no placar', ...human(sharp), value: `${sharp.value.toFixed(2)} golos` });
+  }
+  const crowdR = realRows(againstCrowd, 1).filter(r => r.value > 0);
+  if (crowdR.length) {
+    const rebel = crowdR.reduce((a, b) => (b.value > a.value ? b : a));
+    superlatives.push({ key: 'rebel', emoji: '🦅', title: 'Contra a Corrente',
+      subtitle: 'Mais acertos contra o consenso', ...human(rebel),
+      value: `${rebel.value} acertos` });
   }
   const tendR = tendency.filter(r => !r.isGroup && r.count >= 3);
   if (tendR.length) {
@@ -298,6 +384,7 @@ export function computeLeagueStats(
 
   return {
     predictedMatches, gradedMatches, totalBets: bets.length,
-    accuracy, exactRate, avgPoints, conformity, tendency, goals, realGoalsAvg, superlatives,
+    accuracy, exactRate, avgPoints, conformity, scoreError, againstCrowd,
+    tendency, goals, realGoalsAvg, superlatives,
   };
 }
