@@ -6,14 +6,21 @@ export function getOutcomeFromScore(home: number, away: number): Outcome {
   return 'draw';
 }
 
-export function calculateBetPoints(bet: Bet, result: MatchResult): number {
+// Bónus do resultado exacto (somado por cima do ponto do 1X2). Na Liga Fase de
+// Grupos vale 3; nas restantes ligas vale 1 (resultado exacto = 1 ponto a mais
+// que o 1X2).
+export function exactScoreBonus(leagueId: string): number {
+  return leagueId === 'fase-grupos' ? 3 : 1;
+}
+
+export function calculateBetPoints(bet: Bet, result: MatchResult, exactBonus = 3): number {
   let points = 0;
   const realOutcome = getOutcomeFromScore(result.homeScore, result.awayScore);
 
-  // Resultado exacto: 3 pontos
+  // Resultado exacto: bónus (3 na fase de grupos, 1 nas restantes)
   if (bet.exactHome !== null && bet.exactAway !== null) {
     if (bet.exactHome === result.homeScore && bet.exactAway === result.awayScore) {
-      points += 3;
+      points += exactBonus;
     }
   }
 
@@ -42,7 +49,7 @@ export function buildLeaderboard(
   bets.forEach(bet => {
     const result = results[bet.matchId];
     if (!result) return;
-    const p = calculateBetPoints(bet, result);
+    const p = calculateBetPoints(bet, result, exactScoreBonus(bet.leagueId));
     if (!statsMap[bet.username]) {
       statsMap[bet.username] = { points: 0, exactScores: 0, correctOutcomes: 0 };
     }

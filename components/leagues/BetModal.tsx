@@ -5,7 +5,7 @@ import { X, MapPin, Clock, Loader2, Check, Lock } from 'lucide-react';
 import { getTeam } from '@/data/teams';
 import { formatMatchDate, isBettingOpen, getInitials } from '@/lib/utils';
 import { saveBet, getBet, getMatchResult, getBetsForMatch, getUsersByUsernames } from '@/lib/firestore';
-import { getOutcomeFromScore, calculateBetPoints } from '@/lib/scoring';
+import { getOutcomeFromScore, calculateBetPoints, exactScoreBonus } from '@/lib/scoring';
 import type { Match, Outcome, Bet, MatchResult, User } from '@/types';
 
 interface BetModalProps {
@@ -29,7 +29,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
 
   const bettingOpen = match ? isBettingOpen(match.scheduledAt) : false;
   // Pontos calculados em tempo real a partir do resultado oficial
-  const earnedPoints = existing && result ? calculateBetPoints(existing, result) : null;
+  const earnedPoints = existing && result ? calculateBetPoints(existing, result, exactScoreBonus(leagueId)) : null;
 
   // Com resultado exacto completo, o 1X2 fica bloqueado ao valor coerente
   const lockedOutcome: Outcome | null = (() => {
@@ -210,7 +210,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                         <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                           {otherBets.map(b => {
                             const u = bettors[b.username];
-                            const pts = result ? calculateBetPoints(b, result) : null;
+                            const pts = result ? calculateBetPoints(b, result, exactScoreBonus(leagueId)) : null;
                             return (
                               <div
                                 key={b.username}

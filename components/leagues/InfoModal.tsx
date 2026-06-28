@@ -1,6 +1,7 @@
 'use client';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Target, CheckSquare, Trophy, Calendar, Users } from 'lucide-react';
+import { exactScoreBonus } from '@/lib/scoring';
 import type { League } from '@/types';
 
 interface InfoModalProps {
@@ -22,6 +23,8 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
   const isScorer = league.type === 'scorer';
   const isFantasy = league.type === 'fantasy';
   const prizes = league.prizeDistribution;
+  const exactPts = exactScoreBonus(league.id);
+  const maxPts = exactPts + 1;
 
   return (
     <AnimatePresence>
@@ -80,7 +83,7 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
                           <p className="text-white/35 text-xs">Ex: prever 2–1 e acertar</p>
                         </div>
                       </div>
-                      <span className="text-gold font-black text-lg">3 pts</span>
+                      <span className="text-gold font-black text-lg">{exactPts} {exactPts === 1 ? 'pt' : 'pts'}</span>
                     </div>
                     <div className="flex items-center justify-between bg-white/4 rounded-2xl px-4 py-3.5 border border-white/6">
                       <div className="flex items-center gap-3">
@@ -96,7 +99,7 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
                     </div>
                   </div>
                   <p className="text-white/30 text-xs mt-3 px-1">
-                    Máximo de 4 pontos por jogo (resultado exacto + 1X2 correcto).
+                    Máximo de {maxPts} pontos por jogo (resultado exacto + 1X2 correcto).
                   </p>
                 </div>
               )}
