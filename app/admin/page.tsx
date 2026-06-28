@@ -3,8 +3,8 @@ import { useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, Lock, Loader2, Check, Image as ImageIcon, X } from 'lucide-react';
 import { useAuthContext } from '@/components/auth/AuthContext';
-import { ALL_MATCHES } from '@/data/matches';
-import { getTeam } from '@/data/teams';
+import { getTeam, isRealTeam } from '@/data/teams';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import { setMatchResult, setLeagueBackground } from '@/lib/firestore';
 import { LEAGUES } from '@/data/leagues';
 import { formatMatchDate } from '@/lib/utils';
@@ -40,6 +40,7 @@ async function compressLeagueBg(file: File): Promise<string> {
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuthContext();
+  const { all: ALL_MATCHES } = useResolvedMatches();
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<Match | null>(null);
   const [homeScore, setHomeScore] = useState('');
@@ -150,7 +151,7 @@ export default function AdminPage() {
           const h = getTeam(m.homeTeamId);
           const a = getTeam(m.awayTeamId);
           const isSelected = selected?.id === m.id;
-          if (m.homeTeamId === 'TBD') return null;
+          if (!isRealTeam(m.homeTeamId)) return null;
           return (
             <button
               key={m.id}

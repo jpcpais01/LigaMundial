@@ -1,5 +1,5 @@
 import { JORNADAS, ALL_MATCHES } from '@/data/matches';
-import { TEAMS_LIST } from '@/data/teams';
+import { TEAMS_LIST, isRealTeam } from '@/data/teams';
 import { BETTING_CUTOFF_MS } from '@/lib/utils';
 import type {
   FantasyPlayer, FantasyPosition, FantasySquad, Match, MatchPlayerStats, PlayerStatLine,
@@ -334,7 +334,7 @@ export function computeSquadWeekPoints(
 // por definir (TBD), devolve um conjunto vazio — não dá para saber quem joga.
 export function teamsWithoutMatchInWeek(week: FantasyWeek): Set<string> {
   const all = week.matchIds.map(id => ALL_MATCHES.find(m => m.id === id)!).filter(Boolean);
-  if (all.some(m => m.homeTeamId === 'TBD' || m.awayTeamId === 'TBD')) return new Set();
+  if (all.some(m => !isRealTeam(m.homeTeamId) || !isRealTeam(m.awayTeamId))) return new Set();
   const playing = new Set<string>();
   scoringMatchesOfWeek(week).forEach(m => { playing.add(m.homeTeamId); playing.add(m.awayTeamId); });
   const out = new Set<string>();

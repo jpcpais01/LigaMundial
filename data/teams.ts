@@ -1,4 +1,5 @@
 import { Team } from '@/types';
+import { slotLabels, SLOT_FLAG } from '@/lib/slots';
 
 export const TEAMS: Record<string, Team> = {
   // GROUP A
@@ -78,7 +79,17 @@ export const TEAMS: Record<string, Team> = {
 };
 
 export function getTeam(id: string): Team {
-  return TEAMS[id] || { id, name: id, shortName: id, flag: '🏳', group: '' };
+  if (TEAMS[id]) return TEAMS[id];
+  // Posição da fase a eliminar ainda por preencher (ex: "1A", "3-CEFHI", "w-m075")
+  const labels = slotLabels(id);
+  if (labels) return { id, name: labels.name, shortName: labels.shortName, flag: SLOT_FLAG, group: '' };
+  return { id, name: id, shortName: id, flag: '🏳', group: '' };
+}
+
+// Verdadeiro só para selecções reais já apuradas — falso para "TBD" e para
+// qualquer placeholder de posição da fase a eliminar (1A, 3-CEFHI, w-m075…).
+export function isRealTeam(id: string): boolean {
+  return Object.prototype.hasOwnProperty.call(TEAMS, id) && id !== 'TBD';
 }
 
 export const TEAMS_LIST: Team[] = Object.values(TEAMS).filter(t => t.id !== 'TBD');

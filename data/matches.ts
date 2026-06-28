@@ -105,51 +105,54 @@ export const GROUP_MATCHES: Match[] = [
 
 // ─── FASE ELIMINATÓRIA ────────────────────────────────────────────────────────
 
+// As equipas são posições do quadro (slots) já determinadas pelo sorteio — ver
+// lib/slots.ts. lib/bracket.ts substitui-as pelas selecções reais à medida que
+// os resultados das fases anteriores vão ficando registados.
 export const KNOCKOUT_MATCHES: Match[] = [
 
   // ══ RONDA DE 32 ══
-  { id: 'm073', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-28T19:00:00Z', status: 'scheduled', phase: 'round32', venue: 'SoFi Stadium',           city: 'Los Angeles' },
-  { id: 'm074', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-29T17:00:00Z', status: 'scheduled', phase: 'round32', venue: 'NRG Stadium',            city: 'Houston' },
-  { id: 'm075', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-29T20:30:00Z', status: 'scheduled', phase: 'round32', venue: 'Gillette Stadium',       city: 'Boston' },
-  { id: 'm076', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-30T01:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Estadio BBVA',           city: 'Monterrey' },
-  { id: 'm077', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-30T17:00:00Z', status: 'scheduled', phase: 'round32', venue: 'AT&T Stadium',           city: 'Dallas' },
-  { id: 'm078', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-06-30T21:00:00Z', status: 'scheduled', phase: 'round32', venue: 'MetLife Stadium',        city: 'Nova Iorque' },
-  { id: 'm079', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-01T01:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Estadio Azteca',         city: 'Cidade do México' },
-  { id: 'm080', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-01T16:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
-  { id: 'm081', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-01T20:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Lumen Field',            city: 'Seattle' },
-  { id: 'm082', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-02T00:00:00Z', status: 'scheduled', phase: 'round32', venue: "Levi's Stadium",         city: 'Santa Clara' },
-  { id: 'm083', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-02T19:00:00Z', status: 'scheduled', phase: 'round32', venue: 'SoFi Stadium',           city: 'Los Angeles' },
-  { id: 'm084', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-02T23:00:00Z', status: 'scheduled', phase: 'round32', venue: 'BMO Field',              city: 'Toronto' },
-  { id: 'm085', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-03T03:00:00Z', status: 'scheduled', phase: 'round32', venue: 'BC Place',               city: 'Vancouver' },
-  { id: 'm086', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-03T18:00:00Z', status: 'scheduled', phase: 'round32', venue: 'AT&T Stadium',           city: 'Dallas' },
-  { id: 'm087', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-03T22:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Hard Rock Stadium',      city: 'Miami' },
-  { id: 'm088', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-04T01:30:00Z', status: 'scheduled', phase: 'round32', venue: 'Arrowhead Stadium',      city: 'Kansas City' },
+  { id: 'm073', homeTeamId: '2A', awayTeamId: '2B',      scheduledAt: '2026-06-28T19:00:00Z', status: 'scheduled', phase: 'round32', venue: 'SoFi Stadium',           city: 'Los Angeles' },
+  { id: 'm074', homeTeamId: '1C', awayTeamId: '2F',      scheduledAt: '2026-06-29T17:00:00Z', status: 'scheduled', phase: 'round32', venue: 'NRG Stadium',            city: 'Houston' },
+  { id: 'm075', homeTeamId: '1E', awayTeamId: '3-ABCDF', scheduledAt: '2026-06-29T20:30:00Z', status: 'scheduled', phase: 'round32', venue: 'Gillette Stadium',       city: 'Boston' },
+  { id: 'm076', homeTeamId: '1F', awayTeamId: '2C',      scheduledAt: '2026-06-30T01:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Estadio BBVA',           city: 'Monterrey' },
+  { id: 'm077', homeTeamId: '2E', awayTeamId: '2I',      scheduledAt: '2026-06-30T17:00:00Z', status: 'scheduled', phase: 'round32', venue: 'AT&T Stadium',           city: 'Dallas' },
+  { id: 'm078', homeTeamId: '1I', awayTeamId: '3-CDFGH', scheduledAt: '2026-06-30T21:00:00Z', status: 'scheduled', phase: 'round32', venue: 'MetLife Stadium',        city: 'Nova Iorque' },
+  { id: 'm079', homeTeamId: '1A', awayTeamId: '3-CEFHI', scheduledAt: '2026-07-01T01:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Estadio Azteca',         city: 'Cidade do México' },
+  { id: 'm080', homeTeamId: '1L', awayTeamId: '3-EHIJK', scheduledAt: '2026-07-01T16:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
+  { id: 'm081', homeTeamId: '1G', awayTeamId: '3-AEHIJ', scheduledAt: '2026-07-01T20:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Lumen Field',            city: 'Seattle' },
+  { id: 'm082', homeTeamId: '1D', awayTeamId: '3-BEFIJ', scheduledAt: '2026-07-02T00:00:00Z', status: 'scheduled', phase: 'round32', venue: "Levi's Stadium",         city: 'Santa Clara' },
+  { id: 'm083', homeTeamId: '1H', awayTeamId: '2J',      scheduledAt: '2026-07-02T19:00:00Z', status: 'scheduled', phase: 'round32', venue: 'SoFi Stadium',           city: 'Los Angeles' },
+  { id: 'm084', homeTeamId: '2K', awayTeamId: '2L',      scheduledAt: '2026-07-02T23:00:00Z', status: 'scheduled', phase: 'round32', venue: 'BMO Field',              city: 'Toronto' },
+  { id: 'm085', homeTeamId: '1B', awayTeamId: '3-EFGIJ', scheduledAt: '2026-07-03T03:00:00Z', status: 'scheduled', phase: 'round32', venue: 'BC Place',               city: 'Vancouver' },
+  { id: 'm086', homeTeamId: '2D', awayTeamId: '2G',      scheduledAt: '2026-07-03T18:00:00Z', status: 'scheduled', phase: 'round32', venue: 'AT&T Stadium',           city: 'Dallas' },
+  { id: 'm087', homeTeamId: '1J', awayTeamId: '2H',      scheduledAt: '2026-07-03T22:00:00Z', status: 'scheduled', phase: 'round32', venue: 'Hard Rock Stadium',      city: 'Miami' },
+  { id: 'm088', homeTeamId: '1K', awayTeamId: '3-DEIJL', scheduledAt: '2026-07-04T01:30:00Z', status: 'scheduled', phase: 'round32', venue: 'Arrowhead Stadium',      city: 'Kansas City' },
 
   // ══ OITAVOS DE FINAL ══
-  { id: 'm089', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-04T17:00:00Z', status: 'scheduled', phase: 'round16', venue: 'NRG Stadium',            city: 'Houston' },
-  { id: 'm090', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-04T21:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Lincoln Financial Field', city: 'Filadélfia' },
-  { id: 'm091', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-05T20:00:00Z', status: 'scheduled', phase: 'round16', venue: 'MetLife Stadium',        city: 'Nova Iorque' },
-  { id: 'm092', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-06T00:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Estadio Azteca',         city: 'Cidade do México' },
-  { id: 'm093', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-06T19:00:00Z', status: 'scheduled', phase: 'round16', venue: 'AT&T Stadium',           city: 'Dallas' },
-  { id: 'm094', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-07T00:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Lumen Field',            city: 'Seattle' },
-  { id: 'm095', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-07T16:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
-  { id: 'm096', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-07T20:00:00Z', status: 'scheduled', phase: 'round16', venue: 'BC Place',               city: 'Vancouver' },
+  { id: 'm089', homeTeamId: 'w-m073', awayTeamId: 'w-m076', scheduledAt: '2026-07-04T17:00:00Z', status: 'scheduled', phase: 'round16', venue: 'NRG Stadium',            city: 'Houston' },
+  { id: 'm090', homeTeamId: 'w-m075', awayTeamId: 'w-m078', scheduledAt: '2026-07-04T21:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Lincoln Financial Field', city: 'Filadélfia' },
+  { id: 'm091', homeTeamId: 'w-m074', awayTeamId: 'w-m077', scheduledAt: '2026-07-05T20:00:00Z', status: 'scheduled', phase: 'round16', venue: 'MetLife Stadium',        city: 'Nova Iorque' },
+  { id: 'm092', homeTeamId: 'w-m079', awayTeamId: 'w-m080', scheduledAt: '2026-07-06T00:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Estadio Azteca',         city: 'Cidade do México' },
+  { id: 'm093', homeTeamId: 'w-m084', awayTeamId: 'w-m083', scheduledAt: '2026-07-06T19:00:00Z', status: 'scheduled', phase: 'round16', venue: 'AT&T Stadium',           city: 'Dallas' },
+  { id: 'm094', homeTeamId: 'w-m082', awayTeamId: 'w-m081', scheduledAt: '2026-07-07T00:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Lumen Field',            city: 'Seattle' },
+  { id: 'm095', homeTeamId: 'w-m087', awayTeamId: 'w-m086', scheduledAt: '2026-07-07T16:00:00Z', status: 'scheduled', phase: 'round16', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
+  { id: 'm096', homeTeamId: 'w-m085', awayTeamId: 'w-m088', scheduledAt: '2026-07-07T20:00:00Z', status: 'scheduled', phase: 'round16', venue: 'BC Place',               city: 'Vancouver' },
 
   // ══ QUARTOS DE FINAL ══
-  { id: 'm097', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-09T20:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Gillette Stadium',       city: 'Boston' },
-  { id: 'm098', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-10T19:00:00Z', status: 'scheduled', phase: 'qf', venue: 'SoFi Stadium',           city: 'Los Angeles' },
-  { id: 'm099', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-11T21:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Hard Rock Stadium',      city: 'Miami' },
-  { id: 'm100', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-12T01:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Arrowhead Stadium',      city: 'Kansas City' },
+  { id: 'm097', homeTeamId: 'w-m090', awayTeamId: 'w-m089', scheduledAt: '2026-07-09T20:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Gillette Stadium',       city: 'Boston' },
+  { id: 'm098', homeTeamId: 'w-m093', awayTeamId: 'w-m094', scheduledAt: '2026-07-10T19:00:00Z', status: 'scheduled', phase: 'qf', venue: 'SoFi Stadium',           city: 'Los Angeles' },
+  { id: 'm099', homeTeamId: 'w-m091', awayTeamId: 'w-m092', scheduledAt: '2026-07-11T21:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Hard Rock Stadium',      city: 'Miami' },
+  { id: 'm100', homeTeamId: 'w-m095', awayTeamId: 'w-m096', scheduledAt: '2026-07-12T01:00:00Z', status: 'scheduled', phase: 'qf', venue: 'Arrowhead Stadium',      city: 'Kansas City' },
 
   // ══ MEIAS-FINAIS ══
-  { id: 'm101', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-14T19:00:00Z', status: 'scheduled', phase: 'sf', venue: 'AT&T Stadium',          city: 'Dallas' },
-  { id: 'm102', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-15T19:00:00Z', status: 'scheduled', phase: 'sf', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
+  { id: 'm101', homeTeamId: 'w-m097', awayTeamId: 'w-m098', scheduledAt: '2026-07-14T19:00:00Z', status: 'scheduled', phase: 'sf', venue: 'AT&T Stadium',          city: 'Dallas' },
+  { id: 'm102', homeTeamId: 'w-m099', awayTeamId: 'w-m100', scheduledAt: '2026-07-15T19:00:00Z', status: 'scheduled', phase: 'sf', venue: 'Mercedes-Benz Stadium',  city: 'Atlanta' },
 
   // ══ 3º LUGAR ══
-  { id: 'm103', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-18T21:00:00Z', status: 'scheduled', phase: '3rd', venue: 'Hard Rock Stadium',     city: 'Miami' },
+  { id: 'm103', homeTeamId: 'l-m101', awayTeamId: 'l-m102', scheduledAt: '2026-07-18T21:00:00Z', status: 'scheduled', phase: '3rd', venue: 'Hard Rock Stadium',     city: 'Miami' },
 
   // ══ FINAL ══
-  { id: 'm104', homeTeamId: 'TBD', awayTeamId: 'TBD', scheduledAt: '2026-07-19T19:00:00Z', status: 'scheduled', phase: 'final', venue: 'MetLife Stadium',      city: 'Nova Iorque' },
+  { id: 'm104', homeTeamId: 'w-m101', awayTeamId: 'w-m102', scheduledAt: '2026-07-19T19:00:00Z', status: 'scheduled', phase: 'final', venue: 'MetLife Stadium',      city: 'Nova Iorque' },
 ];
 
 export const ALL_MATCHES = [...GROUP_MATCHES, ...KNOCKOUT_MATCHES];

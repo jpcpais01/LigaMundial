@@ -7,7 +7,7 @@ import MarketSheet from './MarketSheet';
 import PlayerSheet, { SwapTarget } from './PlayerSheet';
 import FantasyLeaderboard from './FantasyLeaderboard';
 import { PLAYERS_BY_ID } from '@/data/players';
-import { ALL_MATCHES } from '@/data/matches';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import { useFantasyStats } from '@/hooks/useFantasyStats';
 import { getFantasySquad, saveFantasySquad } from '@/lib/firestore';
 import { formatMatchDate, timeUntil } from '@/lib/utils';
@@ -64,6 +64,15 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
   const byId = PLAYERS_BY_ID;
   const [tab, setTab] = useState<Tab>('equipa');
   const { stats, loaded: statsLoaded } = useFantasyStats();
+
+  // Quadro a eliminar resolvido → equipas reais para o cálculo de pontos
+  // (golos sofridos / baliza a zeros dependem da equipa de cada jogo).
+  const { all: resolvedMatches } = useResolvedMatches();
+  const matchById = useMemo(() => {
+    const map: Record<string, typeof resolvedMatches[number]> = {};
+    resolvedMatches.forEach(m => { map[m.id] = m; });
+    return map;
+  }, [resolvedMatches]);
 
   const [weekId, setWeekId] = useState(() => getDefaultWeekId());
   const week = getWeek(weekId)!;
@@ -130,7 +139,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
   const pointsById = useMemo(() => {
     const totals: Record<string, number> = {};
     Object.values(stats).forEach(s => {
-      const match = ALL_MATCHES.find(m => m.id === s.matchId);
+      const match = matchById[s.matchId];
       if (!match) return;
       Object.entries(s.players).forEach(([pid, line]) => {
         const p = byId[pid];
@@ -139,7 +148,7 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
       });
     });
     return totals;
-  }, [stats, byId]);
+  }, [stats, byId, matchById]);
 
   // ─── Mercado / fichas ──────────────────────────────────────────────────────
   const [marketCtx, setMarketCtx] = useState<MarketCtx | null>(null);
@@ -157,7 +166,10 @@ export default function Fantasy11View({ league, username, totalMembers }: Fantas
   };
 
   // ─── Pontuação da jornada (modo fechado) ───────────────────────────────────
-  const weekMatches = useMemo(() => scoringMatchesOfWeek(week), [week]);
+  const weekMatches = useMemo(
+    () => scoringMatchesOfWeek(week).map(m => matchById[m.id] ?? m),
+    [week, matchById],
+  );
   const noMatchTeamIds = useMemo(() => teamsWithoutMatchInWeek(week), [week]);
   const weekResult = useMemo(() => {
     if (!locked || !squad) return null;

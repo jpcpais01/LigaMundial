@@ -1,10 +1,10 @@
 'use client';
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { ALL_MATCHES } from '@/data/matches';
-import { getTeam } from '@/data/teams';
+import { getTeam, isRealTeam } from '@/data/teams';
 import { formatTime, formatShortDate } from '@/lib/utils';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import { isToday, isTomorrow } from 'date-fns';
 
 function dayLabel(iso: string): string {
@@ -24,15 +24,16 @@ function phaseShort(match: { phase: string; group?: string }): string {
 
 export default function UpcomingMatches() {
   const liveScores = useLiveScores();
+  const { all } = useResolvedMatches();
 
   // Next 10 matches: upcoming + currently live (within 3h window)
   const matches = useMemo(() => {
     const cutoff = Date.now() - 3 * 60 * 60 * 1000;
-    return ALL_MATCHES
+    return all
       .filter(m => new Date(m.scheduledAt).getTime() > cutoff)
       .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())
       .slice(0, 10);
-  }, []);
+  }, [all]);
 
   // Group by day label
   const groups = useMemo(() => {
@@ -74,7 +75,7 @@ export default function UpcomingMatches() {
               const isEnd     = liveScore?.status === 'finished' || match.status === 'finished';
               const hScore    = liveScore?.homeScore ?? match.homeScore;
               const aScore    = liveScore?.awayScore ?? match.awayScore;
-              const isTBD     = match.homeTeamId === 'TBD';
+              const isTBD     = !isRealTeam(match.homeTeamId);
               const isLast    = gi === groups.length - 1 && mi === dayMatches.length - 1;
 
               return (

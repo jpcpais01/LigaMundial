@@ -3,10 +3,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { MapPin, Clock } from 'lucide-react';
 import Link from 'next/link';
-import { ALL_MATCHES } from '@/data/matches';
-import { getTeam } from '@/data/teams';
+import { getTeam, isRealTeam } from '@/data/teams';
 import { formatMatchDate, formatTime, timeUntil } from '@/lib/utils';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import type { Match } from '@/types';
 import type { LiveScoresMap } from '@/app/api/live/route';
 
@@ -15,9 +15,9 @@ const byKickoff = (a: Match, b: Match) =>
   new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime();
 
 // Prioridade: jogo ao vivo > jogo em curso (API ainda sem dados) > próximo jogo
-function getFeaturedMatch(scores: LiveScoresMap): Match | null {
+function getFeaturedMatch(scores: LiveScoresMap, matches: Match[]): Match | null {
   const now = Date.now();
-  const playable = ALL_MATCHES.filter(m => m.homeTeamId !== 'TBD');
+  const playable = matches.filter(m => isRealTeam(m.homeTeamId));
 
   const live = playable.filter(m => scores[liveKeyOf(m)]?.status === 'live').sort(byKickoff);
   if (live.length > 0) return live[0];
@@ -39,6 +39,7 @@ function getFeaturedMatch(scores: LiveScoresMap): Match | null {
 export default function HeroLiveMatch() {
   const [countdown, setCountdown] = useState('');
   const liveScores = useLiveScores();
+  const { all } = useResolvedMatches();
   const [tick, setTick] = useState(0);
 
   // Reavalia a escolha do jogo a cada 30 s (transições hora-a-hora)
@@ -48,7 +49,7 @@ export default function HeroLiveMatch() {
   }, []);
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const match = useMemo(() => getFeaturedMatch(liveScores), [liveScores, tick]);
+  const match = useMemo(() => getFeaturedMatch(liveScores, all), [liveScores, all, tick]);
 
   // Countdown
   useEffect(() => {

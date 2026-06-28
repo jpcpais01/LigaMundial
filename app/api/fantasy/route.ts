@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ALL_MATCHES, TOURNAMENT_START } from '@/data/matches';
+import { GROUP_MATCHES, TOURNAMENT_START } from '@/data/matches';
 import { resolveTeamId, findMatch } from '@/lib/espn';
-import type { MatchPlayerStats, PlayerStatLine } from '@/types';
+import { resolveKnockout } from '@/lib/bracket';
+import { isRealTeam } from '@/data/teams';
+import type { Match, MatchPlayerStats, MatchResult, PlayerStatLine } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,20 +32,20 @@ type CacheDoc = {
   checkedAt: number;
 };
 
-function anyMatchActive(): boolean {
+function anyMatchActive(matches: Match[]): boolean {
   const now = Date.now();
-  return ALL_MATCHES.some(m => {
-    if (m.homeTeamId === 'TBD') return false;
+  return matches.some(m => {
+    if (!isRealTeam(m.homeTeamId)) return false;
     const start = new Date(m.scheduledAt).getTime();
     return now >= start - WINDOW_BEFORE_MS && now <= start + WINDOW_AFTER_MS;
   });
 }
 
 // Jogos com janela expirada e ainda sem estatísticas guardadas
-function unsettledMatchIds(settled: Set<string>): string[] {
+function unsettledMatchIds(matches: Match[], settled: Set<string>): string[] {
   const now = Date.now();
-  return ALL_MATCHES
-    .filter(m => m.homeTeamId !== 'TBD'
+  return matches
+    .filter(m => isRealTeam(m.homeTeamId)
       && !settled.has(m.id)
       && now > new Date(m.scheduledAt).getTime() + WINDOW_AFTER_MS)
     .map(m => m.id);
@@ -96,7 +98,7 @@ type MappedEvent = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function mapEvents(events: any[]): MappedEvent[] {
+function mapEvents(events: any[], pool: Match[]): MappedEvent[] {
   const out: MappedEvent[] = [];
   for (const e of events) {
     const comp = e?.competitions?.[0];
@@ -115,7 +117,7 @@ function mapEvents(events: any[]): MappedEvent[] {
     const isFinished = state === 'post' && completed;
     if (!isLive && !isFinished) continue;
 
-    const found = findMatch(homeId, awayId, e?.date ?? '');
+    const found = findMatch(homeId, awayId, e?.date ?? '', pool);
     if (!found) continue;
 
     let homeScore = parseInt(homeSide?.score ?? '0') || 0;
@@ -174,6 +176,13 @@ async function readSettledStats(): Promise<Record<string, MatchPlayerStats>> {
   return out;
 }
 
+async function readAllResults(): Promise<Record<string, MatchResult>> {
+  const snaps = await getDocs(collection(db, 'results'));
+  const res: Record<string, MatchResult> = {};
+  snaps.docs.forEach(d => { res[d.id] = d.data() as MatchResult; });
+  return res;
+}
+
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export async function GET() {
   let settled: Record<string, MatchPlayerStats>;
@@ -189,14 +198,20 @@ export async function GET() {
     if (snap.exists()) cache = snap.data() as CacheDoc;
   } catch { /* segue sem cache */ }
 
-  const active = anyMatchActive();
-  const missing = unsettledMatchIds(new Set(Object.keys(settled)));
+  // Resolve as equipas do quadro a eliminar para casar os jogos da ESPN.
+  let allMatches: Match[] = GROUP_MATCHES;
+  try {
+    allMatches = [...GROUP_MATCHES, ...resolveKnockout(await readAllResults())];
+  } catch { /* sem resultados — fica só com a fase de grupos */ }
+
+  const active = anyMatchActive(allMatches);
+  const missing = unsettledMatchIds(allMatches, new Set(Object.keys(settled)));
   const ttl = active ? ACTIVE_CACHE_MS : IDLE_CACHE_MS;
   const needCheck = (active || missing.length > 0) && Date.now() - cache.checkedAt > ttl;
 
   if (needCheck) {
     try {
-      const events = mapEvents(await fetchEspnEvents());
+      const events = mapEvents(await fetchEspnEvents(), allMatches);
       const toFetch: MappedEvent[] = [];
       for (const ev of events) {
         if (ev.status === 'live') toFetch.push(ev);

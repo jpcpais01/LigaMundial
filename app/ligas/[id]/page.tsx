@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, Loader2, CheckCircle, LogIn, Info, LogOut } from 'lucide-react';
 import Link from 'next/link';
 import { getLeague } from '@/data/leagues';
-import { GROUP_MATCHES, KNOCKOUT_MATCHES } from '@/data/matches';
+import { isRealTeam } from '@/data/teams';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import { useAuthContext } from '@/components/auth/AuthContext';
 import { joinLeague, leaveLeague, getLeagueMembers, getUserBetsForLeague, getUsersByUsernames } from '@/lib/firestore';
 import GamesTab from '@/components/leagues/GamesTab';
@@ -30,6 +31,7 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
   const { id } = use(params);
   const league = getLeague(id);
   const { user, setShowAuthModal, updateUser } = useAuthContext();
+  const resolved = useResolvedMatches();
 
   const [tab, setTab] = useState<Tab>('jogos');
   const [joined, setJoined] = useState(false);
@@ -76,8 +78,8 @@ export default function LeaguePage({ params }: { params: Promise<{ id: string }>
 
   // Can leave only if the first match of this league hasn't started yet
   const firstMatch = (() => {
-    const pool = league.matchPhase === 'cup' ? KNOCKOUT_MATCHES : GROUP_MATCHES;
-    return pool.filter(m => m.homeTeamId !== 'TBD')
+    const pool = league.matchPhase === 'cup' ? resolved.knockout : resolved.group;
+    return pool.filter(m => isRealTeam(m.homeTeamId))
                .sort((a, b) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime())[0];
   })();
   const canLeave = firstMatch ? new Date(firstMatch.scheduledAt) > new Date() : false;

@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { doc, getDoc, setDoc, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { ALL_MATCHES, TOURNAMENT_START } from '@/data/matches';
+import { GROUP_MATCHES, TOURNAMENT_START } from '@/data/matches';
 import { resolveTeamId, findMatch } from '@/lib/espn';
+import { resolveKnockout } from '@/lib/bracket';
+import { isRealTeam } from '@/data/teams';
 import type { Match, MatchResult } from '@/types';
 
 export const dynamic = 'force-dynamic';
@@ -30,20 +32,20 @@ const WINDOW_BEFORE_MS = 30 * 60 * 1000;
 const WINDOW_AFTER_MS  = 3 * 60 * 60 * 1000;
 
 // ─── Is any match happening right now? ───────────────────────────────────────
-function anyMatchActive(): boolean {
+function anyMatchActive(matches: Match[]): boolean {
   const now = Date.now();
-  return ALL_MATCHES.some(m => {
-    if (m.homeTeamId === 'TBD') return false;
+  return matches.some(m => {
+    if (!isRealTeam(m.homeTeamId)) return false;
     const start = new Date(m.scheduledAt).getTime();
     return now >= start - WINDOW_BEFORE_MS && now <= start + WINDOW_AFTER_MS;
   });
 }
 
 // Há jogos já terminados (janela expirada) sem resultado registado?
-function hasUnsettledFinishedMatches(results: Record<string, MatchResult>): boolean {
+function hasUnsettledFinishedMatches(matches: Match[], results: Record<string, MatchResult>): boolean {
   const now = Date.now();
-  return ALL_MATCHES.some(m => {
-    if (m.homeTeamId === 'TBD' || results[m.id]) return false;
+  return matches.some(m => {
+    if (!isRealTeam(m.homeTeamId) || results[m.id]) return false;
     return now > new Date(m.scheduledAt).getTime() + WINDOW_AFTER_MS;
   });
 }
@@ -60,7 +62,7 @@ type ParsedEvent = {
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function parseEspnEvents(events: any[]): ParsedEvent[] {
+function parseEspnEvents(events: any[], pool: Match[]): ParsedEvent[] {
   const out: ParsedEvent[] = [];
   for (const e of events) {
     const comp = e?.competitions?.[0];
@@ -79,7 +81,7 @@ function parseEspnEvents(events: any[]): ParsedEvent[] {
     const isFinished = state === 'post' && completed;
     if (!isLive && !isFinished) continue;
 
-    const found = findMatch(homeId, awayId, e?.date ?? '');
+    const found = findMatch(homeId, awayId, e?.date ?? '', pool);
     if (!found) continue;
 
     let homeScore = parseInt(homeSide?.score ?? '0') || 0;
@@ -144,11 +146,11 @@ async function settleFinished(parsed: ParsedEvent[], results: Record<string, Mat
 }
 
 // Converte a colecção de resultados para o mapa usado pela UI
-function finishedMapFromResults(results: Record<string, MatchResult>): LiveScoresMap {
+function finishedMapFromResults(results: Record<string, MatchResult>, matches: Match[]): LiveScoresMap {
   const map: LiveScoresMap = {};
   for (const r of Object.values(results)) {
-    const m = ALL_MATCHES.find(x => x.id === r.matchId);
-    if (!m || m.homeTeamId === 'TBD') continue;
+    const m = matches.find(x => x.id === r.matchId);
+    if (!m || !isRealTeam(m.homeTeamId)) continue;
     map[`${m.homeTeamId}_${m.awayTeamId}`] = {
       homeScore: r.homeScore,
       awayScore: r.awayScore,
@@ -160,9 +162,6 @@ function finishedMapFromResults(results: Record<string, MatchResult>): LiveScore
 
 // ─── Handler ──────────────────────────────────────────────────────────────────
 export async function GET() {
-  const active = anyMatchActive();
-  const cacheTtl = active ? ACTIVE_CACHE_MS : IDLE_CACHE_MS;
-
   // Step 1 — cache partilhada no Firestore (comum a todas as instâncias)
   let cached: FirestoreLiveDoc | null = null;
   try {
@@ -170,22 +169,26 @@ export async function GET() {
     if (snap.exists()) cached = snap.data() as FirestoreLiveDoc;
   } catch { /* falha de leitura — segue em frente */ }
 
-  if (cached && Date.now() - cached.updatedAt < cacheTtl) {
-    return NextResponse.json(cached.scores);
-  }
-
-  // Step 2 — cache expirada: reconstruir a partir dos resultados + ESPN
+  // Resultados já registados → resolvem as equipas do quadro a eliminar, para
+  // que os jogos da fase a eliminar também casem com os eventos da ESPN.
   let results: Record<string, MatchResult>;
   try {
     results = await readAllResults();
   } catch {
     return NextResponse.json(cached?.scores ?? {});
   }
+  const allMatches: Match[] = [...GROUP_MATCHES, ...resolveKnockout(results)];
+
+  const active = anyMatchActive(allMatches);
+  const cacheTtl = active ? ACTIVE_CACHE_MS : IDLE_CACHE_MS;
+  if (cached && Date.now() - cached.updatedAt < cacheTtl) {
+    return NextResponse.json(cached.scores);
+  }
 
   let liveOnly: LiveScoresMap = {};
-  if (active || hasUnsettledFinishedMatches(results)) {
+  if (active || hasUnsettledFinishedMatches(allMatches, results)) {
     try {
-      const parsed = parseEspnEvents(await fetchEspnEvents());
+      const parsed = parseEspnEvents(await fetchEspnEvents(), allMatches);
       await settleFinished(parsed, results);
       for (const p of parsed) {
         if (p.status !== 'live') continue;
@@ -204,7 +207,7 @@ export async function GET() {
   }
 
   // Resultados liquidados primeiro; jogos ao vivo sobrepõem-se
-  const merged: LiveScoresMap = { ...finishedMapFromResults(results), ...liveOnly };
+  const merged: LiveScoresMap = { ...finishedMapFromResults(results, allMatches), ...liveOnly };
 
   try {
     const newDoc: FirestoreLiveDoc = { scores: merged, updatedAt: Date.now() };

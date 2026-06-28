@@ -78,9 +78,16 @@ export function resolveTeamId(team: any): string | null {
 
 // Encontra o jogo interno correspondente; em caso de pares repetidos
 // (ex: reencontro na fase a eliminar) escolhe o mais próximo da data do evento
-export function findMatch(homeId: string, awayId: string, eventDate: string): { match: Match; swapped: boolean } | null {
+// `pool` permite passar os jogos com o quadro a eliminar já resolvido (equipas
+// reais); por omissão usa os jogos estáticos (apenas a fase de grupos casa).
+export function findMatch(
+  homeId: string,
+  awayId: string,
+  eventDate: string,
+  pool: Match[] = ALL_MATCHES,
+): { match: Match; swapped: boolean } | null {
   const candidates: { match: Match; swapped: boolean }[] = [];
-  for (const m of ALL_MATCHES) {
+  for (const m of pool) {
     if (m.homeTeamId === homeId && m.awayTeamId === awayId) candidates.push({ match: m, swapped: false });
     else if (m.homeTeamId === awayId && m.awayTeamId === homeId) candidates.push({ match: m, swapped: true });
   }

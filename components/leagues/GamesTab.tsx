@@ -2,10 +2,11 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { getTeam } from '@/data/teams';
+import { getTeam, isRealTeam } from '@/data/teams';
 import { GROUP_MATCHES, KNOCKOUT_MATCHES, JORNADAS } from '@/data/matches';
 import { formatTime, isBettingOpen } from '@/lib/utils';
 import { useLiveScores } from '@/hooks/useLiveScores';
+import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import BetModal from './BetModal';
 import type { League, Match, Bet } from '@/types';
 
@@ -18,12 +19,15 @@ interface GamesTabProps {
 type ViewMode = 'rounds' | 'groups';
 
 export default function GamesTab({ league, username, bets }: GamesTabProps) {
+  // Jogos com o quadro a eliminar já resolvido (equipas reais onde possível)
+  const resolved = useResolvedMatches();
+
   // Determine which matches this league shows
   const allMatches = useMemo(() => {
-    if (league.matchPhase === 'group') return GROUP_MATCHES;
-    if (league.matchPhase === 'cup') return KNOCKOUT_MATCHES;
-    return [...GROUP_MATCHES, ...KNOCKOUT_MATCHES];
-  }, [league]);
+    if (league.matchPhase === 'group') return resolved.group;
+    if (league.matchPhase === 'cup') return resolved.knockout;
+    return resolved.all;
+  }, [league, resolved]);
 
   const [selectedRound, setSelectedRound] = useState(0);
   const [selectedGroup, setSelectedGroup] = useState('A');
@@ -65,7 +69,7 @@ export default function GamesTab({ league, username, bets }: GamesTabProps) {
     const matchId = searchParams.get('match');
     if (!matchId) return;
     const target = allMatches.find(m => m.id === matchId);
-    if (!target || target.homeTeamId === 'TBD') return;
+    if (!target || !isRealTeam(target.homeTeamId)) return;
     const roundIndex = rounds.findIndex(r => r.matchIds.includes(matchId));
     if (roundIndex >= 0) setSelectedRound(roundIndex);
     setActiveBetMatch(target);
@@ -147,7 +151,7 @@ function MatchRow({
   const isFinished = liveScore?.status === 'finished' || match.status === 'finished';
   const homeScore = liveScore?.homeScore ?? match.homeScore;
   const awayScore = liveScore?.awayScore ?? match.awayScore;
-  const isTBD = match.homeTeamId === 'TBD';
+  const isTBD = !isRealTeam(match.homeTeamId);
 
   return (
     <motion.button
