@@ -8,6 +8,7 @@
 
 import { GROUP_MATCHES, KNOCKOUT_MATCHES } from '@/data/matches';
 import { GROUPS, isRealTeam } from '@/data/teams';
+import { THIRD_PLACE_TABLE } from '@/data/thirdPlaceTable';
 import { parseSlot } from '@/lib/slots';
 import type { Match, MatchResult } from '@/types';
 
@@ -42,8 +43,9 @@ function groupTable(group: string, results: ResultsMap): TeamRow[] | null {
   );
 }
 
-// Emparelhamento dos 8 melhores terceiros com as 8 posições "3-…" do quadro.
-// Devolve um mapa `${matchId}:${side}` → teamId, ou null se ainda não der.
+// Atribuição dos 8 melhores terceiros às posições "3-…" da Ronda de 32, segundo
+// a tabela oficial da FIFA (data/thirdPlaceTable.ts). Devolve um mapa
+// `${matchId}:${side}` → teamId, ou null se ainda não for determinável.
 function thirdPlaceAssignment(results: ResultsMap): Record<string, string> | null {
   const orders: Record<string, TeamRow[]> = {};
   for (const g of Object.keys(GROUPS)) {
@@ -57,38 +59,20 @@ function thirdPlaceAssignment(results: ResultsMap): Record<string, string> | nul
   thirds.sort((a, b) =>
     b.pts - a.pts || b.gd - a.gd || b.gf - a.gf || a.group.localeCompare(b.group)
   );
-  const qualifying = new Set(thirds.slice(0, 8).map(t => t.group));
+  const key = thirds.slice(0, 8).map(t => t.group).sort().join('');
+  const table = THIRD_PLACE_TABLE[key];
+  if (!table) return null;
 
-  // Posições "3-…" do quadro, com os grupos elegíveis de cada uma.
-  const slots: { key: string; eligible: string[] }[] = [];
-  for (const m of KNOCKOUT_MATCHES) {
-    (['home', 'away'] as const).forEach(side => {
-      const slot = parseSlot(side === 'home' ? m.homeTeamId : m.awayTeamId);
-      if (slot && slot.kind === 'third') {
-        slots.push({ key: `${m.id}:${side}`, eligible: slot.groups.filter(g => qualifying.has(g)) });
-      }
-    });
-  }
-
-  // Emparelhamento perfeito (cada posição recebe um grupo elegível, sem repetir).
-  // Resolve as posições mais restritas primeiro para convergir depressa.
-  slots.sort((a, b) => a.eligible.length - b.eligible.length);
-  const assigned: Record<string, string> = {};
-  const used = new Set<string>();
-  const solve = (i: number): boolean => {
-    if (i === slots.length) return true;
-    for (const g of slots[i].eligible) {
-      if (used.has(g)) continue;
-      used.add(g); assigned[slots[i].key] = g;
-      if (solve(i + 1)) return true;
-      used.delete(g); delete assigned[slots[i].key];
-    }
-    return false;
-  };
-  if (!solve(0)) return null;
-
+  // Cada posição de 3º está no lado "away"; o "home" é o vencedor do grupo
+  // (ex: "1E"). A tabela diz qual o grupo do 3º que defronta cada vencedor.
   const out: Record<string, string> = {};
-  for (const key of Object.keys(assigned)) out[key] = orders[assigned[key]][2].teamId;
+  for (const m of KNOCKOUT_MATCHES) {
+    const slot = parseSlot(m.awayTeamId);
+    if (slot?.kind !== 'third') continue;
+    const thirdGroup = table[m.homeTeamId];
+    if (!thirdGroup || !orders[thirdGroup]) return null;
+    out[`${m.id}:away`] = orders[thirdGroup][2].teamId;
+  }
   return out;
 }
 
