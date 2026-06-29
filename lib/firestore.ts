@@ -4,7 +4,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { getOutcomeFromScore } from './scoring';
-import type { User, Bet, SpecialBet, LeagueMember, MatchResult } from '@/types';
+import type { User, Bet, SpecialBet, LeagueMember, MatchResult, Outcome } from '@/types';
 
 // ─── UTILIZADORES ────────────────────────────────────────────────────────────
 export async function getUser(username: string): Promise<User | null> {
@@ -137,6 +137,40 @@ async function copyExistingBetsToJornadas(username: string): Promise<void> {
       outcome: b.outcome,
     }))
   );
+}
+
+// Inserir/editar a aposta de um jogador (painel admin). Ao contrário de
+// saveBet, escreve diretamente na liga indicada (sem exigir inscrição nem
+// espelhar automaticamente), para o admin poder corrigir apostas esquecidas.
+export async function adminSetBet(params: {
+  leagueId: string;
+  matchId: string;
+  username: string;
+  exactHome: number | null;
+  exactAway: number | null;
+  outcome?: Outcome;
+}): Promise<void> {
+  const username = params.username.trim().toLowerCase();
+  const outcome: Outcome =
+    params.exactHome !== null && params.exactAway !== null
+      ? getOutcomeFromScore(params.exactHome, params.exactAway)
+      : (params.outcome ?? 'draw');
+  const id = `${params.leagueId}_${params.matchId}_${username}`;
+  const now = new Date().toISOString();
+  const data = {
+    username,
+    leagueId: params.leagueId,
+    matchId: params.matchId,
+    exactHome: params.exactHome,
+    exactAway: params.exactAway,
+    outcome,
+  };
+  const existing = await getDoc(doc(db, 'bets', id));
+  if (existing.exists()) {
+    await updateDoc(doc(db, 'bets', id), { ...data, updatedAt: now });
+  } else {
+    await setDoc(doc(db, 'bets', id), { ...data, id, points: null, createdAt: now, updatedAt: now });
+  }
 }
 
 export async function getBet(leagueId: string, matchId: string, username: string): Promise<Bet | null> {
