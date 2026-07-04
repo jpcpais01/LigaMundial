@@ -23,7 +23,7 @@ export default function InfoModal({ league, onClose }: InfoModalProps) {
   const isScorer = league.type === 'scorer';
   const isFantasy = league.type === 'fantasy';
   const prizes = league.prizeDistribution;
-  const exactPts = exactScoreBonus(league.id);
+  const exactPts = exactScoreBonus(league.id, league.matchPhase === 'cup');
   const maxPts = exactPts + 1;
 
   return (

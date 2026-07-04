@@ -28,8 +28,9 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
   const [bettors, setBettors] = useState<Record<string, User>>({});
 
   const bettingOpen = match ? isBettingOpen(match.scheduledAt) : false;
+  const isCupPhase = !!match && match.phase !== 'group';
   // Pontos calculados em tempo real a partir do resultado oficial
-  const earnedPoints = existing && result ? calculateBetPoints(existing, result, exactScoreBonus(leagueId)) : null;
+  const earnedPoints = existing && result ? calculateBetPoints(existing, result, exactScoreBonus(leagueId, isCupPhase)) : null;
 
   // Com resultado exacto completo, o 1X2 fica bloqueado ao valor coerente
   const lockedOutcome: Outcome | null = (() => {
@@ -217,7 +218,7 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                         <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
                           {otherBets.map(b => {
                             const u = bettors[b.username];
-                            const pts = result ? calculateBetPoints(b, result, exactScoreBonus(leagueId)) : null;
+                            const pts = result ? calculateBetPoints(b, result, exactScoreBonus(leagueId, isCupPhase)) : null;
                             return (
                               <div
                                 key={b.username}

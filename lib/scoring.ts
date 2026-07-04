@@ -1,3 +1,4 @@
+import { getMatchById } from '@/data/matches';
 import type { Bet, MatchResult, LeaderboardEntry, Outcome } from '@/types';
 
 export function getOutcomeFromScore(home: number, away: number): Outcome {
@@ -7,10 +8,11 @@ export function getOutcomeFromScore(home: number, away: number): Outcome {
 }
 
 // Bónus do resultado exacto (somado por cima do ponto do 1X2). Na Liga Fase de
-// Grupos vale 3; nas restantes ligas vale 1 (resultado exacto = 1 ponto a mais
-// que o 1X2).
-export function exactScoreBonus(leagueId: string): number {
-  return leagueId === 'fase-grupos' ? 3 : 1;
+// Grupos vale 3; nos jogos da fase a eliminar vale 2; nas restantes situações
+// (ex: jornadas de grupos na Extra — Jornadas) vale 1.
+export function exactScoreBonus(leagueId: string, isCupPhase = false): number {
+  if (leagueId === 'fase-grupos') return 3;
+  return isCupPhase ? 2 : 1;
 }
 
 export function calculateBetPoints(bet: Bet, result: MatchResult, exactBonus = 3): number {
@@ -49,7 +51,9 @@ export function buildLeaderboard(
   bets.forEach(bet => {
     const result = results[bet.matchId];
     if (!result) return;
-    const p = calculateBetPoints(bet, result, exactScoreBonus(bet.leagueId));
+    const betMatch = getMatchById(bet.matchId);
+    const isCupPhase = !!betMatch && betMatch.phase !== 'group';
+    const p = calculateBetPoints(bet, result, exactScoreBonus(bet.leagueId, isCupPhase));
     if (!statsMap[bet.username]) {
       statsMap[bet.username] = { points: 0, exactScores: 0, correctOutcomes: 0 };
     }
