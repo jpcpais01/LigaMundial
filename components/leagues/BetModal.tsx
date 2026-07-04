@@ -148,10 +148,17 @@ export default function BetModal({ match, leagueId, username, onClose }: BetModa
                 </div>
 
                 {result ? (
-                  <div className="flex items-center gap-2 px-4">
-                    <span className="text-3xl font-black text-white tabular-nums">{result.homeScore}</span>
-                    <span className="text-white/20 text-lg">–</span>
-                    <span className="text-3xl font-black text-white tabular-nums">{result.awayScore}</span>
+                  <div className="flex flex-col items-center gap-1 px-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-3xl font-black text-white tabular-nums">{result.homeScore}</span>
+                      <span className="text-white/20 text-lg">–</span>
+                      <span className="text-3xl font-black text-white tabular-nums">{result.awayScore}</span>
+                    </div>
+                    {result.penaltyWinner && (
+                      <p className="text-white/30 text-[10px]">
+                        {result.penaltyWinner === 'home' ? home.shortName : away.shortName} vence nos penáltis
+                      </p>
+                    )}
                   </div>
                 ) : match.status !== 'scheduled' && match.homeScore !== undefined ? (
                   <div className="flex items-center gap-2 px-4">

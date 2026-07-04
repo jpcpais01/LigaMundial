@@ -59,6 +59,7 @@ type ParsedEvent = {
   awayScore: number;
   status: 'live' | 'finished';
   elapsed?: number;
+  penaltyWinner?: 'home' | 'away';
 };
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -88,6 +89,14 @@ function parseEspnEvents(events: any[], pool: Match[]): ParsedEvent[] {
     let awayScore = parseInt(awaySide?.score ?? '0') || 0;
     if (found.swapped) [homeScore, awayScore] = [awayScore, homeScore];
 
+    // Eliminatória empatada (90'/prolongamento) decidida nos penáltis — a ESPN
+    // marca o apurado com `winner: true` mesmo quando o placar fica empatado.
+    let penaltyWinner: 'home' | 'away' | undefined;
+    if (isFinished && homeScore === awayScore) {
+      if (homeSide?.winner === true) penaltyWinner = found.swapped ? 'away' : 'home';
+      else if (awaySide?.winner === true) penaltyWinner = found.swapped ? 'home' : 'away';
+    }
+
     const elapsed = parseInt(e?.status?.displayClock ?? '');
     out.push({
       match: found.match,
@@ -95,6 +104,7 @@ function parseEspnEvents(events: any[], pool: Match[]): ParsedEvent[] {
       awayScore,
       status: isLive ? 'live' : 'finished',
       elapsed: isNaN(elapsed) ? undefined : elapsed,
+      penaltyWinner,
     });
   }
   return out;
@@ -130,12 +140,14 @@ async function settleFinished(parsed: ParsedEvent[], results: Record<string, Mat
     if (existing) {
       // 'admin' (ou docs antigos sem source) têm prioridade; auto só corrige auto
       if (existing.source !== 'auto') continue;
-      if (existing.homeScore === p.homeScore && existing.awayScore === p.awayScore) continue;
+      if (existing.homeScore === p.homeScore && existing.awayScore === p.awayScore
+        && existing.penaltyWinner === p.penaltyWinner) continue;
     }
     const result: MatchResult = {
       matchId: p.match.id,
       homeScore: p.homeScore,
       awayScore: p.awayScore,
+      ...(p.penaltyWinner ? { penaltyWinner: p.penaltyWinner } : {}),
       setAt: new Date().toISOString(),
       source: 'auto',
     };

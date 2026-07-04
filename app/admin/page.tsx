@@ -45,6 +45,7 @@ export default function AdminPage() {
   const [selected, setSelected] = useState<Match | null>(null);
   const [homeScore, setHomeScore] = useState('');
   const [awayScore, setAwayScore] = useState('');
+  const [penaltyWinner, setPenaltyWinner] = useState<'home' | 'away' | ''>('');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -146,17 +147,26 @@ export default function AdminPage() {
     }
   };
 
+  // Eliminatórias empatadas exigem um vencedor nos penáltis para o quadro avançar
+  const isKnockout = !!selected && selected.phase !== 'group';
+  const parsedHome = parseInt(homeScore);
+  const parsedAway = parseInt(awayScore);
+  const isDraw = !isNaN(parsedHome) && !isNaN(parsedAway) && parsedHome === parsedAway;
+  const needsPenaltyWinner = isKnockout && isDraw;
+
   const handleSave = async () => {
     if (!selected) return;
     const h = parseInt(homeScore);
     const a = parseInt(awayScore);
     if (isNaN(h) || isNaN(a)) return;
+    if (needsPenaltyWinner && !penaltyWinner) return;
     setSaving(true);
     try {
       await setMatchResult({
         matchId: selected.id,
         homeScore: h,
         awayScore: a,
+        ...(needsPenaltyWinner && penaltyWinner ? { penaltyWinner } : {}),
         setAt: new Date().toISOString(),
         source: 'admin',
       });
@@ -197,7 +207,7 @@ export default function AdminPage() {
           return (
             <button
               key={m.id}
-              onClick={() => { setSelected(m); setHomeScore(''); setAwayScore(''); setSaved(false); }}
+              onClick={() => { setSelected(m); setHomeScore(''); setAwayScore(''); setPenaltyWinner(''); setSaved(false); }}
               className={`w-full flex items-center gap-3 rounded-xl p-3 text-left transition-all border ${
                 isSelected ? 'bg-gold/15 border-gold/30' : 'bg-white/3 border-white/6'
               }`}
@@ -315,7 +325,7 @@ export default function AdminPage() {
               <input
                 type="number" min="0" max="20"
                 value={homeScore}
-                onChange={e => setHomeScore(e.target.value)}
+                onChange={e => { setHomeScore(e.target.value); setPenaltyWinner(''); }}
                 placeholder="0"
                 className="w-full bg-white/5 border border-white/10 rounded-xl text-center text-white
                            text-2xl font-bold py-3 focus:outline-none focus:border-gold/50
@@ -328,7 +338,7 @@ export default function AdminPage() {
               <input
                 type="number" min="0" max="20"
                 value={awayScore}
-                onChange={e => setAwayScore(e.target.value)}
+                onChange={e => { setAwayScore(e.target.value); setPenaltyWinner(''); }}
                 placeholder="0"
                 className="w-full bg-white/5 border border-white/10 rounded-xl text-center text-white
                            text-2xl font-bold py-3 focus:outline-none focus:border-gold/50
@@ -337,9 +347,35 @@ export default function AdminPage() {
             </div>
           </div>
 
+          {needsPenaltyWinner && (
+            <div className="mb-5">
+              <p className="text-white/40 text-xs text-center mb-2">Empate — quem venceu nos penáltis?</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPenaltyWinner('home')}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                    penaltyWinner === 'home' ? 'bg-gold/15 border-gold/30 text-gold' : 'bg-white/3 border-white/8 text-white/50'
+                  }`}
+                >
+                  <span className="text-lg">{getTeam(selected.homeTeamId).flag}</span>
+                  {getTeam(selected.homeTeamId).shortName}
+                </button>
+                <button
+                  onClick={() => setPenaltyWinner('away')}
+                  className={`flex-1 flex items-center justify-center gap-2 rounded-xl border py-2.5 text-xs font-semibold transition-all ${
+                    penaltyWinner === 'away' ? 'bg-gold/15 border-gold/30 text-gold' : 'bg-white/3 border-white/8 text-white/50'
+                  }`}
+                >
+                  {getTeam(selected.awayTeamId).shortName}
+                  <span className="text-lg">{getTeam(selected.awayTeamId).flag}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
           <motion.button
             onClick={handleSave}
-            disabled={saving || homeScore === '' || awayScore === ''}
+            disabled={saving || homeScore === '' || awayScore === '' || (needsPenaltyWinner && !penaltyWinner)}
             className={`w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 ${
               saved ? 'bg-green-500/20 text-green-400 border border-green-500/30'
                     : 'bg-gold-gradient text-black disabled:opacity-40'

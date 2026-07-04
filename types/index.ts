@@ -110,6 +110,10 @@ export interface MatchResult {
   // 'auto' = liquidado automaticamente pela API; 'admin' (ou ausente) = manual.
   // Resultados manuais nunca são substituídos pela liquidação automática.
   source?: 'auto' | 'admin';
+  // Vencedor nos penáltis, quando o resultado (90'/prolongamento) termina empatado
+  // numa eliminatória. As apostas 1X2 continuam a basear-se no empate — este
+  // campo serve apenas para o quadro a eliminar avançar para a selecção real.
+  penaltyWinner?: 'home' | 'away';
 }
 
 // ─── FANTASY 11 ──────────────────────────────────────────────────────────────

@@ -97,9 +97,16 @@ export function resolveKnockout(results: ResultsMap): Match[] {
         const sh = home[slot.matchId], sa = away[slot.matchId];
         if (!sh || !sa || !isRealTeam(sh) || !isRealTeam(sa)) return slotId;
         const r = results[slot.matchId];
-        if (!r || r.homeScore === r.awayScore) return slotId; // por jogar ou empate (decisão por penáltis desconhecida)
-        const winner = r.homeScore > r.awayScore ? sh : sa;
-        const loser = r.homeScore > r.awayScore ? sa : sh;
+        if (!r) return slotId; // por jogar
+        let winner: string, loser: string;
+        if (r.homeScore === r.awayScore) {
+          if (!r.penaltyWinner) return slotId; // empate — decisão por penáltis ainda não registada
+          winner = r.penaltyWinner === 'home' ? sh : sa;
+          loser = r.penaltyWinner === 'home' ? sa : sh;
+        } else {
+          winner = r.homeScore > r.awayScore ? sh : sa;
+          loser = r.homeScore > r.awayScore ? sa : sh;
+        }
         return slot.kind === 'matchWinner' ? winner : loser;
       }
     }
