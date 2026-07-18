@@ -1,5 +1,5 @@
 import {
-  doc, getDoc, setDoc, updateDoc, collection,
+  doc, getDoc, setDoc, updateDoc, deleteDoc, collection,
   query, where, getDocs, orderBy, serverTimestamp, Timestamp,
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -66,7 +66,6 @@ export async function isLeagueMember(leagueId: string, username: string): Promis
 
 export async function leaveLeague(leagueId: string, username: string): Promise<void> {
   // Remove member doc
-  const { deleteDoc } = await import('firebase/firestore');
   await deleteDoc(doc(db, 'leagueMembers', `${leagueId}_${username}`));
   // Remove from user's joinedLeagues list
   const userRef = doc(db, 'users', username);
@@ -304,6 +303,17 @@ export async function getAllFantasySquads(
 // ─── RESULTADOS DOS JOGOS (admin) ─────────────────────────────────────────────
 export async function setMatchResult(result: MatchResult): Promise<void> {
   await setDoc(doc(db, 'results', result.matchId), result);
+  // A lista de jogos (GamesTab) mostra os resultados através da cache
+  // partilhada de /api/live — sem isto, um resultado inserido manualmente só
+  // apareceria aí depois da cache expirar (até 5 min). Invalida-a para que o
+  // próximo pedido recalcule já com este resultado.
+  await invalidateLiveScoresCache();
+}
+
+async function invalidateLiveScoresCache(): Promise<void> {
+  try {
+    await deleteDoc(doc(db, 'liveScores', 'current'));
+  } catch { /* falha a apagar a cache — o próximo /api/live tenta na mesma */ }
 }
 
 export async function getMatchResult(matchId: string): Promise<MatchResult | null> {
