@@ -8,7 +8,17 @@ import { useResolvedMatches } from '@/hooks/useResolvedMatches';
 import { setMatchResult, setLeagueBackground, adminSetBet } from '@/lib/firestore';
 import { LEAGUES } from '@/data/leagues';
 import { formatMatchDate } from '@/lib/utils';
-import type { Match } from '@/types';
+import type { Match, MatchPhase } from '@/types';
+
+const ROUND_TABS: { id: MatchPhase; label: string }[] = [
+  { id: 'group',   label: 'Grupos' },
+  { id: 'round32', label: 'Ronda 32' },
+  { id: 'round16', label: 'Oitavos' },
+  { id: 'qf',      label: 'Quartos' },
+  { id: 'sf',      label: 'Meias' },
+  { id: '3rd',     label: '3º Lugar' },
+  { id: 'final',   label: 'Final' },
+];
 
 async function compressLeagueBg(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -42,6 +52,7 @@ export default function AdminPage() {
   const { user, isAdmin } = useAuthContext();
   const { all: ALL_MATCHES } = useResolvedMatches();
   const [search, setSearch] = useState('');
+  const [phaseFilter, setPhaseFilter] = useState<MatchPhase>('group');
   const [selected, setSelected] = useState<Match | null>(null);
   const [homeScore, setHomeScore] = useState('');
   const [awayScore, setAwayScore] = useState('');
@@ -88,7 +99,12 @@ export default function AdminPage() {
       h.shortName.toLowerCase().includes(query) || a.shortName.toLowerCase().includes(query);
   };
 
-  const filteredMatches = ALL_MATCHES.filter(m => matchMatchesQuery(m, search)).slice(0, 30);
+  // Sem pesquisa, navega por ronda (senão a lista mostra sempre os primeiros
+  // jogos da fase de grupos e as rondas a eliminar tornam-se inacessíveis).
+  // Com pesquisa, procura em todas as rondas.
+  const filteredMatches = search
+    ? ALL_MATCHES.filter(m => matchMatchesQuery(m, search)).slice(0, 30)
+    : ALL_MATCHES.filter(m => m.phase === phaseFilter).slice(0, 80);
 
   // Só jogos com equipas reais (não dá para apostar em posições por definir)
   const betFilteredMatches = ALL_MATCHES
@@ -197,8 +213,32 @@ export default function AdminPage() {
                    placeholder:text-white/25 focus:outline-none focus:border-gold/40 mb-4 text-sm"
       />
 
+      {/* Round tabs — só relevantes sem pesquisa activa */}
+      {!search && (
+        <div className="flex gap-1.5 flex-wrap mb-4">
+          {ROUND_TABS.map(r => (
+            <button
+              key={r.id}
+              onClick={() => setPhaseFilter(r.id)}
+              className={`text-xs px-3 py-1.5 rounded-xl border transition-all ${
+                phaseFilter === r.id
+                  ? 'bg-gold/15 border-gold/30 text-gold font-semibold'
+                  : 'bg-white/4 border-white/8 text-white/50'
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Match selector */}
       <div className="space-y-1.5 max-h-72 overflow-y-auto mb-6">
+        {!search && filteredMatches.every(m => !isRealTeam(m.homeTeamId)) && (
+          <p className="text-white/25 text-xs text-center py-6">
+            Ainda não há selecções reais apuradas para esta ronda.
+          </p>
+        )}
         {filteredMatches.map(m => {
           const h = getTeam(m.homeTeamId);
           const a = getTeam(m.awayTeamId);
